@@ -1,39 +1,40 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useRef, useState } from 'react';
 import {
-  Box,
-  ThemeProvider,
-  createTheme,
-  useMediaQuery,
-  Drawer,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Typography,
   // Snackbar,
   Alert,
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Drawer,
+  ThemeProvider,
+  Typography,
+  createTheme,
+  useMediaQuery,
 } from '@mui/material';
 import * as maplibregl from 'maplibre-gl';
+import { useEffect, useRef, useState } from 'react';
 
 // Components
-import Header from './Header';
-import Footer from './Footer';
+import Footer from '../pages/Footer';
+import Header from '../pages/Header';
 import InstructionsOverlay from './InstructionsOverlay';
 // import AnalyticsDashboard from './SafeAnalyticsDashboard';
-import ApiPerformance from './ApiPerformance';
-import LoadingSpinner from './LoadingSpinner';
-import ErrorBoundary from './ErrorBoundary';
-import RouteErrorHandler from './RouteErrorHandler';
+import ErrorBoundary from '../pages/ErrorBoundary';
+import RouteErrorHandler from '../pages/RouteErrorHandler';
+import ApiPerformance from '../pages/ApiPerformance';
+import LoadingSpinner from '../pages/LoadingSpinner';
 
 // Hooks
 import { useApiTimer } from '../hooks/useApiTimer';
-import { initializeMap, cleanupMap, useGeolocation } from '../utils/mapUtils';
 import type { DeliveryStop, NavigationStep } from '../types/types';
+import { cleanupMap, initializeMap, useGeolocation } from '../utils/mapUtils';
 import { useRouteOptimization } from '../utils/utils';
-import { NavigationPanel } from './MapView';
-import SafeAnalyticsDashboard from './SafeAnalyticsDashboard';
+// import { NavigationPanel } from './MapView';
+import SafeAnalyticsDashboard from './Dashboard/SafeAnalyticsDashboard';
+import NavigationPanel from './NavigationPanel';
 
 const MapViewEnhanced = () => {
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -55,6 +56,23 @@ const MapViewEnhanced = () => {
   const [selectedStopId, setSelectedStopId] = useState<string>('');
   const [routeError, setRouteError] = useState<string | null>(null);
   const [mapLoadError, setMapLoadError] = useState<string | null>(null);
+  const [pendingStop, setPendingStop] = useState<DeliveryStop | null>(null);
+  const [routeLoading, setRouteLoading] = useState(false);
+
+  const handleConfirmPostpone = () => {
+    if (!pendingStop) return;
+    setDeliveryStops((prev) => {
+      const remaining = prev.filter((s) => s.id !== pendingStop.id);
+      return [...remaining, pendingStop];
+    });
+    setPendingStop(null);
+    setPostponeDialogOpen(false);
+  };
+
+  const handleCancelPostpone = () => {
+    setPostponeDialogOpen(false);
+    setPendingStop(null);
+  };
 
   const isMobile = useMediaQuery('(max-width:768px)');
   // const isTablet = useMediaQuery('(max-width:1024px)');
@@ -103,12 +121,81 @@ const MapViewEnhanced = () => {
     };
   }, []);
 
+
+
+  useEffect(() => {
+    if (!mapRef.current || !currentLocation) return;
+    const el = document.createElement('div');
+    el.className = 'user-location-marker';
+    new maplibregl.Marker(el).setLngLat(currentLocation).addTo(mapRef.current);
+  }, [currentLocation]);
+
+  useEffect(() => {
+    localStorage.setItem('deliveryStops', JSON.stringify(deliveryStops));
+  }, [deliveryStops]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('deliveryStops');
+    if (saved) setDeliveryStops(JSON.parse(saved));
+  }, []);
+
+  useEffect(() => {
+    if (isNavigating && navigationSteps.length > 0) {
+      const step = navigationSteps[currentStopIndex];
+      if (step) speechSynthesis.speak(new SpeechSynthesisUtterance(step.instruction));
+    }
+  }, [currentStopIndex, isNavigating]);
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+
+    const updateMarkers = () => {
+      // הסר תחנות ישנות
+      const style = map.getStyle();
+      if (!style) return;
+
+      const layers = style.layers || [];
+      layers.forEach((layer) => {
+        if (layer.id.startsWith('stop-marker') && map.getLayer(layer.id)) {
+          map.removeLayer(layer.id);
+        }
+      });
+
+      const sources = style.sources || {};
+      Object.keys(sources).forEach((id) => {
+        if (id.startsWith('stop-marker') && map.getSource(id)) {
+          map.removeSource(id);
+        }
+      });
+
+      // הוסף תחנות חדשות
+      deliveryStops.forEach((stop, i) => {
+        // const el = document.createElement('div');
+
+        // el.className = `delivery-marker ${stop.completed ? 'completed' : ''} ${i === currentStopIndex ? 'current' : ''}`;
+        // el.innerText = `${i + 1}`;
+        // new maplibregl.Marker(el).setLngLat(stop.coordinates).addTo(map);
+        const el = document.createElement('div');
+        el.classList.add('delivery-marker');
+        if (stop.completed) el.classList.add('completed');
+        if (i === currentStopIndex) el.classList.add('current');
+        el.innerText = `${i + 1}`;
+        new maplibregl.Marker(el).setLngLat(stop.coordinates).addTo(map);
+      });
+    };
+
+    // אם הסגנון כבר טעון – הפעל מיידית, אחרת חכה לאירוע load
+    if (map.isStyleLoaded()) updateMarkers();
+    else map.once('load', updateMarkers);
+  }, [deliveryStops, currentStopIndex]);
+
   // טעינת מסלול עם טיפול בשגיאות משופר
   const loadRoute = async (retryCount = 0): Promise<boolean> => {
     if (!ready || !mapRef.current || !currentLocation) {
       setRouteError('מפה או מיקום לא זמינים');
       return false;
     }
+    setRouteLoading(true);
 
     try {
       const coords: [number, number][] = [currentLocation, ...deliveryStops.map((s) => s.coordinates)];
@@ -196,6 +283,8 @@ const MapViewEnhanced = () => {
       }
 
       return false;
+    } finally {
+      setRouteLoading(false);
     }
   };
 
@@ -237,7 +326,13 @@ const MapViewEnhanced = () => {
   // דחיית תחנה
   const handlePostponeStop = (stopId: string) => {
     setSelectedStopId(stopId);
+    // const handlePostponeStop = (stopId: string) => {
+    const stop = deliveryStops.find((s) => s.id === stopId);
+    if (!stop) return;
+    setPendingStop(stop);
     setPostponeDialogOpen(true);
+    // setPostponeDialogOpen(true);
+    // };
   };
 
   const confirmPostpone = () => {
@@ -438,7 +533,7 @@ const MapViewEnhanced = () => {
             </Box>
 
             {/* Navigation Panel - Desktop */}
-            {!isMobile && (
+            {!isMobile && mobileOpen && (
               <NavigationPanel
                 isNavigating={isNavigating}
                 onStartNavigation={startNavigation}
@@ -454,11 +549,19 @@ const MapViewEnhanced = () => {
                 onAddStop={handleAddStop}
                 currentLocation={currentLocation}
                 locationAccuracy={locationAccuracy}
+                ready={ready}
+                routeLoading={routeLoading}
+                routeError={routeError}
+                postponeDialogOpen={postponeDialogOpen}
+                pendingStop={pendingStop}
+                onConfirmPostpone={handleConfirmPostpone}
+                onCancelPostpone={handleCancelPostpone}
+                onClosePanel={handleDrawerToggle}
               />
             )}
 
             {/* Navigation Panel - Mobile Drawer */}
-            {isMobile && (
+            {isMobile && mobileOpen && (
               <Drawer
                 variant="temporary"
                 open={mobileOpen}
@@ -486,6 +589,14 @@ const MapViewEnhanced = () => {
                   onAddStop={handleAddStop}
                   currentLocation={currentLocation}
                   locationAccuracy={locationAccuracy}
+                  ready={ready}
+                  routeLoading={routeLoading}
+                  routeError={routeError}
+                  postponeDialogOpen={postponeDialogOpen}
+                  pendingStop={pendingStop}
+                  onConfirmPostpone={handleConfirmPostpone}
+                  onCancelPostpone={handleCancelPostpone}
+                  onClosePanel={handleDrawerToggle}
                 />
               </Drawer>
             )}

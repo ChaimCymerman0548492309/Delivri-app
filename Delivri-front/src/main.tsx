@@ -1,9 +1,9 @@
+import { ThemeProvider, createTheme } from '@mui/material';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { ThemeProvider, createTheme } from '@mui/material';
 import MapViewEnhanced from './components/MapViewEnhanced';
 import './index.css';
-import AppErrorBoundary from './components/ErrorBoundary';
+import AppErrorBoundary from './pages/ErrorBoundary';
 
 const theme = createTheme({
   direction: 'rtl',

@@ -1,6 +1,6 @@
 // App.tsx
 import './App.css';
-import AppErrorBoundary from './components/ErrorBoundary';
+import AppErrorBoundary from './pages/ErrorBoundary';
 // import MapView from './components/MapView';
 import MapViewEnhanced from './components/MapViewEnhanced';
 
