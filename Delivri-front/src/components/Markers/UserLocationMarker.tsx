@@ -12,11 +12,10 @@ interface UserLocationMarkerProps {
 const ACCURACY_SOURCE_ID = 'user-location-accuracy';
 
 const UserLocationMarker: React.FC<UserLocationMarkerProps> = ({ location, map, accuracy }) => {
-  console.log("🚀 ~ UserLocationMarker ~ location:", location)
   const markerRef = useRef<maplibregl.Marker | null>(null);
 
   useEffect(() => {
-    if (!map) return;
+    if (!map ) return;
 
     const onLoad = () => {
       const element = document.createElement('div');

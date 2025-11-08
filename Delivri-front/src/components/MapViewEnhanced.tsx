@@ -475,9 +475,9 @@ const handleLocateUser = async () => {
             {/* Map Container */}
             <Box sx={{ flex: 1, position: 'relative' }}>
               <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
-              {ready && currentLocation && mapRef.current && (
+              {/* {ready && currentLocation && mapRef.current && (
                 <UserLocationMarker location={currentLocation} map={mapRef.current} accuracy={locationAccuracy} />
-              )}
+              )} */}
               {/* Loading Overlay for Map */}
               {!ready && !mapLoadError && (
                 <Box
