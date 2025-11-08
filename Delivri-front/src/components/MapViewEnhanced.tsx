@@ -32,9 +32,9 @@ import { useApiTimer } from '../hooks/useApiTimer';
 import type { DeliveryStop, NavigationStep } from '../types/types';
 import { cleanupMap, initializeMap, useGeolocation } from '../utils/mapUtils';
 import { useRouteOptimization } from '../utils/utils';
-// import { NavigationPanel } from './MapView';
 import SafeAnalyticsDashboard from './Dashboard/SafeAnalyticsDashboard';
 import NavigationPanel from './NavigationPanel';
+import UserLocationMarker from './Markers/UserLocationMarker';
 
 const MapViewEnhanced = () => {
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -58,6 +58,7 @@ const MapViewEnhanced = () => {
   const [mapLoadError, setMapLoadError] = useState<string | null>(null);
   const [pendingStop, setPendingStop] = useState<DeliveryStop | null>(null);
   const [routeLoading, setRouteLoading] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null);
 
   const handleConfirmPostpone = () => {
     if (!pendingStop) return;
@@ -75,9 +76,8 @@ const MapViewEnhanced = () => {
   };
 
   const isMobile = useMediaQuery('(max-width:768px)');
-  // const isTablet = useMediaQuery('(max-width:1024px)');
 
-  const { currentLocation, locationAccuracy, getCurrentLocation } = useGeolocation();
+  const {  locationAccuracy, getCurrentLocation } = useGeolocation();
   const { timings, loading, trackApiCall } = useApiTimer();
 
   const theme = createTheme({
@@ -90,45 +90,47 @@ const MapViewEnhanced = () => {
     },
   });
 
-  // אתחול מפה עם טיפול בשגיאות
-  useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
+  
 
-    try {
-      mapRef.current = initializeMap(containerRef.current, async () => {
-        setReady(true);
-        setMapLoadError(null);
-        try {
-          await trackApiCall(() => getCurrentLocation(), 'אתחול מיקום');
-        } catch (error) {
-          console.error('Failed to get initial location:', error);
-          setMapLoadError('לא ניתן לאחזר מיקום נוכחי');
-        }
-      });
+// אתחול מפה (רק פעם אחת)
+useEffect(() => {
+  if (!containerRef.current || mapRef.current) return;
+  try {
+    mapRef.current = initializeMap(containerRef.current, () => {
+      setReady(true);
+      setMapLoadError(null);
+      console.log('✅ Map initialized successfully');
+    });
 
-      mapRef.current.on('error', (e) => {
-        console.error('Map error:', e);
-        setMapLoadError('שגיאה בטעינת המפה');
-      });
-    } catch (error) {
-      console.error('Map initialization error:', error);
-      setMapLoadError('שגיאה באתחול המפה');
+    mapRef.current.on('error', (e) => {
+      console.error('Map error:', e);
+      setMapLoadError('שגיאה בטעינת המפה');
+    });
+  } catch (e) {
+    console.error('Map init error:', e);
+    setMapLoadError('שגיאה באתחול המפה');
+  }
+
+  return () => {
+    cleanupMap(mapRef.current);
+    mapRef.current = null;
+  };
+}, []);
+
+// פעולה יזומה של המשתמש שתאתחל את המיקום
+const handleLocateUser = async () => {
+  try {
+    const pos = await trackApiCall(() => getCurrentLocation(), 'איתור מיקום');
+    setCurrentLocation(pos);
+    if (mapRef.current && pos && currentLocation) {
+      mapRef.current.flyTo({ center: currentLocation, zoom: 14, essential: true });
     }
+  } catch (err) {
+    console.error('שגיאה באיתור מיקום:', err);
+    setMapLoadError('לא ניתן לגשת למיקום, אנא אשר הרשאה');
+  }
+};
 
-    return () => {
-      cleanupMap(mapRef.current);
-      mapRef.current = null;
-    };
-  }, []);
-
-
-
-  useEffect(() => {
-    if (!mapRef.current || !currentLocation) return;
-    const el = document.createElement('div');
-    el.className = 'user-location-marker';
-    new maplibregl.Marker(el).setLngLat(currentLocation).addTo(mapRef.current);
-  }, [currentLocation]);
 
   useEffect(() => {
     localStorage.setItem('deliveryStops', JSON.stringify(deliveryStops));
@@ -145,6 +147,7 @@ const MapViewEnhanced = () => {
       if (step) speechSynthesis.speak(new SpeechSynthesisUtterance(step.instruction));
     }
   }, [currentStopIndex, isNavigating]);
+
   useEffect(() => {
     if (!mapRef.current) return;
     const map = mapRef.current;
@@ -402,7 +405,8 @@ const MapViewEnhanced = () => {
     locationTimerRef.current = setInterval(async () => {
       try {
         const pos = await getCurrentLocation();
-        if (mapRef.current) {
+        if (mapRef.current && pos && currentLocation) {
+          setCurrentLocation(pos);
           mapRef.current.flyTo({ center: pos, zoom: 15, essential: true });
         }
       } catch (err) {
@@ -454,6 +458,10 @@ const MapViewEnhanced = () => {
       <ThemeProvider theme={theme}>
         <Box sx={{ display: 'flex', height: '100vh', flexDirection: 'column' }}>
           {/* Header */}
+          <Button variant="contained" color="primary" onClick={handleLocateUser}>
+            📍 מצא את המיקום שלי
+          </Button>
+
           <Header
             onMenuToggle={handleDrawerToggle}
             onLocationFocus={focusOnUserLocation}
@@ -467,7 +475,9 @@ const MapViewEnhanced = () => {
             {/* Map Container */}
             <Box sx={{ flex: 1, position: 'relative' }}>
               <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
-
+              {ready && currentLocation && mapRef.current && (
+                <UserLocationMarker location={currentLocation} map={mapRef.current} accuracy={locationAccuracy} />
+              )}
               {/* Loading Overlay for Map */}
               {!ready && !mapLoadError && (
                 <Box
@@ -653,7 +663,7 @@ const MapViewEnhanced = () => {
             </Box>
           )}
 
-          <style>{`
+          {/* <style>{`
             @keyframes pulse {
               0% { transform: scale(1); opacity: 1; }
               50% { transform: scale(1.1); opacity: 0.7; }
@@ -695,7 +705,7 @@ const MapViewEnhanced = () => {
               box-shadow: 0 2px 8px rgba(0,0,0,0.3);
               animation: pulse 2s infinite;
             }
-          `}</style>
+          `}</style> */}
         </Box>
       </ThemeProvider>
     </ErrorBoundary>

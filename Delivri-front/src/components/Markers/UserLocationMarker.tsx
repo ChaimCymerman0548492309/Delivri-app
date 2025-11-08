@@ -6,12 +6,13 @@ import { useEffect, useRef } from 'react';
 interface UserLocationMarkerProps {
   location: [number, number];
   map: Map;
-  accuracy?: number;
+  accuracy?: number | null;
 }
 
 const ACCURACY_SOURCE_ID = 'user-location-accuracy';
 
 const UserLocationMarker: React.FC<UserLocationMarkerProps> = ({ location, map, accuracy }) => {
+  console.log("🚀 ~ UserLocationMarker ~ location:", location)
   const markerRef = useRef<maplibregl.Marker | null>(null);
 
   useEffect(() => {

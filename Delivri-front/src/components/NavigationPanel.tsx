@@ -183,7 +183,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
             )
           }
           onClick={isNavigating ? onStopNavigation : onStartNavigation}
-          disabled={!ready || routeLoading || (!isNavigating && (!currentLocation || deliveryStops.length === 0))}
+          disabled={routeLoading || !ready || (!isNavigating && (!currentLocation || deliveryStops.length === 0))}
           sx={{ py: 1.2, mb: 1 }}>
           {isNavigating ? 'עצירת הניווט' : `התחל ניווט (${deliveryStops.length})`}
         </Button>
