@@ -4,13 +4,8 @@ import {
   Alert,
   Box,
   Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Drawer,
   ThemeProvider,
-  Typography,
   createTheme,
   useMediaQuery,
 } from '@mui/material';
@@ -22,10 +17,10 @@ import Footer from '../pages/Footer';
 import Header from '../pages/Header';
 import InstructionsOverlay from './InstructionsOverlay';
 // import AnalyticsDashboard from './SafeAnalyticsDashboard';
-import ErrorBoundary from '../pages/ErrorBoundary';
-import RouteErrorHandler from '../pages/RouteErrorHandler';
 import ApiPerformance from '../pages/ApiPerformance';
+import ErrorBoundary from '../pages/ErrorBoundary';
 import LoadingSpinner from '../pages/LoadingSpinner';
+import RouteErrorHandler from '../pages/RouteErrorHandler';
 
 // Hooks
 import { useApiTimer } from '../hooks/useApiTimer';
@@ -34,14 +29,13 @@ import { cleanupMap, initializeMap, useGeolocation } from '../utils/mapUtils';
 import { useRouteOptimization } from '../utils/utils';
 import SafeAnalyticsDashboard from './Dashboard/SafeAnalyticsDashboard';
 import NavigationPanel from './NavigationPanel';
-import UserLocationMarker from './Markers/UserLocationMarker';
 
 const MapViewEnhanced = () => {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const locationTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { optimizeRouteWithTSP, getRouteData } = useRouteOptimization();
+  const watchIdRef = useRef<number | null>(null);
 
   const [ready, setReady] = useState(false);
   const [deliveryStops, setDeliveryStops] = useState<DeliveryStop[]>([]);
@@ -59,6 +53,7 @@ const MapViewEnhanced = () => {
   const [pendingStop, setPendingStop] = useState<DeliveryStop | null>(null);
   const [routeLoading, setRouteLoading] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null);
+  const [tracking, setTracking] = useState(false);
 
   const handleConfirmPostpone = () => {
     if (!pendingStop) return;
@@ -77,7 +72,7 @@ const MapViewEnhanced = () => {
 
   const isMobile = useMediaQuery('(max-width:768px)');
 
-  const {  locationAccuracy, getCurrentLocation } = useGeolocation();
+  const { locationAccuracy, getCurrentLocation } = useGeolocation();
   const { timings, loading, trackApiCall } = useApiTimer();
 
   const theme = createTheme({
@@ -90,47 +85,67 @@ const MapViewEnhanced = () => {
     },
   });
 
-  
+  // אתחול מפה (רק פעם אחת)
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return;
+    try {
+      mapRef.current = initializeMap(containerRef.current, () => {
+        setReady(true);
+        setMapLoadError(null);
+        console.log('✅ Map initialized successfully');
+      });
 
-// אתחול מפה (רק פעם אחת)
-useEffect(() => {
-  if (!containerRef.current || mapRef.current) return;
-  try {
-    mapRef.current = initializeMap(containerRef.current, () => {
-      setReady(true);
-      setMapLoadError(null);
-      console.log('✅ Map initialized successfully');
-    });
-
-    mapRef.current.on('error', (e) => {
-      console.error('Map error:', e);
-      setMapLoadError('שגיאה בטעינת המפה');
-    });
-  } catch (e) {
-    console.error('Map init error:', e);
-    setMapLoadError('שגיאה באתחול המפה');
-  }
-
-  return () => {
-    cleanupMap(mapRef.current);
-    mapRef.current = null;
-  };
-}, []);
-
-// פעולה יזומה של המשתמש שתאתחל את המיקום
-const handleLocateUser = async () => {
-  try {
-    const pos = await trackApiCall(() => getCurrentLocation(), 'איתור מיקום');
-    setCurrentLocation(pos);
-    if (mapRef.current && pos && currentLocation) {
-      mapRef.current.flyTo({ center: currentLocation, zoom: 14, essential: true });
+      mapRef.current.on('error', (e) => {
+        console.error('Map error:', e);
+        setMapLoadError('שגיאה בטעינת המפה');
+      });
+    } catch (e) {
+      console.error('Map init error:', e);
+      setMapLoadError('שגיאה באתחול המפה');
     }
-  } catch (err) {
-    console.error('שגיאה באיתור מיקום:', err);
-    setMapLoadError('לא ניתן לגשת למיקום, אנא אשר הרשאה');
-  }
-};
 
+    return () => {
+      cleanupMap(mapRef.current);
+      mapRef.current = null;
+    };
+  }, []);
+
+  const handleLocateUser = async () => {
+    try {
+      const pos = await getCurrentLocation(); // נדרשת פעולה מהמשתמש
+      setCurrentLocation(pos);
+      setTracking(true); // מפעיל את ה־useEffect הבא
+    } catch {
+      setMapLoadError('אין הרשאה למיקום');
+    }
+  };
+
+  useEffect(() => {
+    if (!tracking || !mapRef.current) return;
+    const map = mapRef.current;
+    let marker: maplibregl.Marker | null = null;
+
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const coords: [number, number] = [pos.coords.longitude, pos.coords.latitude];
+        setCurrentLocation(coords);
+
+        if (!marker) {
+          const el = document.createElement('div');
+          el.className = 'user-location-marker';
+          marker = new maplibregl.Marker(el).setLngLat(coords).addTo(map);
+        } else {
+          marker.setLngLat(coords);
+        }
+
+        map.flyTo({ center: coords, zoom: 15, essential: true });
+      },
+      (err) => console.error('שגיאת מיקום:', err),
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 },
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [tracking]);
 
   useEffect(() => {
     localStorage.setItem('deliveryStops', JSON.stringify(deliveryStops));
@@ -338,41 +353,22 @@ const handleLocateUser = async () => {
     // };
   };
 
-  const confirmPostpone = () => {
-    setDeliveryStops((prev) => {
-      const stopIndex = prev.findIndex((stop) => stop.id === selectedStopId);
-      if (stopIndex === -1) return prev;
-
-      const newStops = [...prev];
-      const [postponedStop] = newStops.splice(stopIndex, 1);
-      newStops.push(postponedStop);
-
-      return newStops.map((stop, index) => ({ ...stop, order: index }));
-    });
-
-    setPostponeDialogOpen(false);
-    setSelectedStopId('');
-
-    // טען מחדש את המסלול אם במוד ניווט
-    if (isNavigating) {
-      loadRoute();
-    }
-  };
-
   // סימון תחנה כבוצע
   const handleCompleteStop = (stopId: string) => {
     setDeliveryStops((prev) => prev.map((stop) => (stop.id === stopId ? { ...stop, completed: true } : stop)));
 
-    const currentIndex = deliveryStops.findIndex((stop) => stop.id === stopId);
+    const currentIndex = deliveryStops.findIndex((s) => s.id === stopId);
+
     if (currentIndex === currentStopIndex && currentIndex < deliveryStops.length - 1) {
       setCurrentStopIndex(currentIndex + 1);
     }
 
+    // אם זו האחרונה – עצור ניווט ומעקב
     if (currentIndex === deliveryStops.length - 1) {
       setIsNavigating(false);
-      if (locationTimerRef.current) {
-        clearInterval(locationTimerRef.current);
-        locationTimerRef.current = null;
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
       }
     }
   };
@@ -394,25 +390,21 @@ const handleLocateUser = async () => {
     setCurrentStopIndex(0);
 
     if (mapRef.current && currentLocation) {
-      mapRef.current.flyTo({
-        center: currentLocation,
-        zoom: 14,
-        essential: true,
-      });
+      mapRef.current.flyTo({ center: currentLocation, zoom: 14, essential: true });
     }
 
-    // עדכון מיקום כל 15 שניות
-    locationTimerRef.current = setInterval(async () => {
-      try {
-        const pos = await getCurrentLocation();
-        if (mapRef.current && pos && currentLocation) {
-          setCurrentLocation(pos);
-          mapRef.current.flyTo({ center: pos, zoom: 15, essential: true });
-        }
-      } catch (err) {
-        console.error('Location update failed:', err);
-      }
-    }, 15000);
+    // הפעל מעקב רציף אחר מיקום (במקום setInterval)
+    if (watchIdRef.current === null) {
+      watchIdRef.current = navigator.geolocation.watchPosition(
+        (pos) => {
+          const coords: [number, number] = [pos.coords.longitude, pos.coords.latitude];
+          setCurrentLocation(coords);
+          mapRef.current?.flyTo({ center: coords, zoom: 15, essential: true });
+        },
+        (err) => console.error('Location watch error:', err),
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 },
+      );
+    }
 
     if (isMobile) setMobileOpen(false);
   };
@@ -420,9 +412,9 @@ const handleLocateUser = async () => {
   // עצירת ניווט
   const stopNavigation = () => {
     setIsNavigating(false);
-    if (locationTimerRef.current) {
-      clearInterval(locationTimerRef.current);
-      locationTimerRef.current = null;
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
     }
   };
 
@@ -632,20 +624,6 @@ const handleLocateUser = async () => {
             isNavigating={isNavigating}
           />
 
-          {/* Postpone Dialog */}
-          <Dialog open={postponeDialogOpen} onClose={() => setPostponeDialogOpen(false)}>
-            <DialogTitle>דחיית תחנה</DialogTitle>
-            <DialogContent>
-              <Typography>האם ברצונך לדחות תחנה זו לסוף הרשימה?</Typography>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setPostponeDialogOpen(false)}>ביטול</Button>
-              <Button onClick={confirmPostpone} variant="contained" color="primary">
-                דחה תחנה
-              </Button>
-            </DialogActions>
-          </Dialog>
-
           {/* Route Error Handler */}
           <RouteErrorHandler error={routeError} onRetry={handleRetryRoute} onDismiss={() => setRouteError(null)} />
 
@@ -662,50 +640,6 @@ const handleLocateUser = async () => {
               <LoadingSpinner message="טוען נתונים..." />
             </Box>
           )}
-
-          {/* <style>{`
-            @keyframes pulse {
-              0% { transform: scale(1); opacity: 1; }
-              50% { transform: scale(1.1); opacity: 0.7; }
-              100% { transform: scale(1); opacity: 1; }
-            }
-            
-            .delivery-marker {
-              width: 36px;
-              height: 36px;
-              background-color: #f44336;
-              border: 3px solid white;
-              border-radius: 50%;
-              box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: white;
-              font-size: 14px;
-              font-weight: bold;
-              cursor: pointer;
-              transition: all 0.3s ease;
-            }
-            
-            .delivery-marker.completed {
-              background-color: #4caf50;
-            }
-            
-            .delivery-marker.current {
-              background-color: #ff9800;
-              animation: pulse 2s infinite;
-            }
-            
-            .user-location-marker {
-              width: 20px;
-              height: 20px;
-              background-color: #2196f3;
-              border: 3px solid white;
-              border-radius: 50%;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-              animation: pulse 2s infinite;
-            }
-          `}</style> */}
         </Box>
       </ThemeProvider>
     </ErrorBoundary>

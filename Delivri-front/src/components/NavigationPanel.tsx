@@ -187,12 +187,12 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
           sx={{ py: 1.2, mb: 1 }}>
           {isNavigating ? 'עצירת הניווט' : `התחל ניווט (${deliveryStops.length})`}
         </Button>
-
+{/* 
         {routeError && (
           <Alert severity="error" sx={{ textAlign: 'right' }}>
             {routeError}
           </Alert>
-        )}
+        )} */}
 
         {isNavigating && (
           <Card sx={{ bgcolor: 'primary.light', color: 'white', mt: 1 }}>

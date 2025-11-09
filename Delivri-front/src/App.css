@@ -31,3 +31,23 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }
+
+   /* .user-location-marker {
+              width: 20px;
+              height: 20px;
+              background-color: #2196f3;
+              border: 3px solid white;
+              border-radius: 50%;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+              animation: pulse 2s infinite; 
+            } */
+
+
+            .user-location-marker {
+  width: 18px;
+  height: 18px;
+  background-color: #2196f3;
+  border: 3px solid white;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(0,0,0,0.4);
+}
