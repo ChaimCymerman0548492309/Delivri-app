@@ -30,6 +30,7 @@ import { cleanupMap, initializeMap, useGeolocation } from '../utils/mapUtils';
 import { useRouteOptimization } from '../utils/utils';
 import SafeAnalyticsDashboard from './Dashboard/SafeAnalyticsDashboard';
 import NavigationPanel from './NavigationPanel';
+import AnalyticsDashboard from './Dashboard/AnalyticsDashboard';
 
 const MapViewEnhanced = () => {
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -56,6 +57,7 @@ const MapViewEnhanced = () => {
   const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null);
   const [tracking, setTracking] = useState(false);
   const [locationPopupOpen, setLocationPopupOpen] = useState(true);
+  const [openAnalyticsDashboard, setOpenAnalyticsDashboard] = useState<boolean>(false);
 
   const handleConfirmPostpone = () => {
     if (!pendingStop) return;
@@ -475,16 +477,19 @@ const MapViewEnhanced = () => {
             onClose={() => setLocationPopupOpen(false)}
             onConfirm={handleLocationConfirm}
           />
+
           <Header
             onMenuToggle={handleDrawerToggle}
             onLocationFocus={focusOnUserLocation}
             onShowAnalytics={() => setAnalyticsOpen(true)}
+            setOpenAnalyticsDashboard={() => setOpenAnalyticsDashboard(prev => !prev)}
             deliveryStopsCount={deliveryStops.length}
             isNavigating={isNavigating}
-          />
+            />
 
           {/* Main Content */}
           <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
+            {openAnalyticsDashboard && <AnalyticsDashboard open={openAnalyticsDashboard} onClose={() => setOpenAnalyticsDashboard(false)} />}
             {/* Map Container */}
             <Box sx={{ flex: 1, position: 'relative' }}>
               <div ref={containerRef} style={{ width: '100%', height: '100%' }} />

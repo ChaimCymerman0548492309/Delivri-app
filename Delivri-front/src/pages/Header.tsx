@@ -1,12 +1,12 @@
-import { AppBar, Badge, Box, IconButton, Toolbar, Typography, 
-  
- } from '@mui/material';
-import { Menu as MenuIcon, MyLocation as MyLocationIcon, Analytics as AnalyticsIcon } from '@mui/icons-material';
+import { Analytics as AnalyticsIcon, Menu as MenuIcon, MyLocation as MyLocationIcon } from '@mui/icons-material';
+import { AppBar, Badge, Box, IconButton, Toolbar, Typography } from '@mui/material';
+
 
 interface HeaderProps {
   onMenuToggle: () => void;
   onLocationFocus: () => void;
   onShowAnalytics: () => void;
+  setOpenAnalyticsDashboard: () => void;
   deliveryStopsCount: number;
   isNavigating: boolean;
 }
@@ -15,11 +15,11 @@ const Header: React.FC<HeaderProps> = ({
   onMenuToggle,
   onLocationFocus,
   onShowAnalytics,
+  setOpenAnalyticsDashboard,
   deliveryStopsCount,
   isNavigating,
 }) => {
   // const isMobile = useMediaQuery('(max-width:768px)');
-
   return (
     <AppBar position="static" elevation={2}>
       <Toolbar>
@@ -28,7 +28,6 @@ const Header: React.FC<HeaderProps> = ({
             <MenuIcon />
           </Badge>
         </IconButton>
-
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
           🚚 ניהול משלוחים
           {isNavigating && (
@@ -45,10 +44,12 @@ const Header: React.FC<HeaderProps> = ({
               במצב ניווט
             </Typography>
           )}
-        </Typography>
-
+        </Typography>{' '}
         <Box sx={{ display: 'flex', gap: 1 }}>
           <IconButton color="inherit" onClick={onShowAnalytics}>
+            <AnalyticsIcon />
+          </IconButton>
+          <IconButton color="inherit" onClick={setOpenAnalyticsDashboard}>
             <AnalyticsIcon />
           </IconButton>
 

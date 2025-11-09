@@ -96,7 +96,7 @@ const SafeAnalyticsDashboard: React.FC<SafeAnalyticsDashboardProps> = ({
       <DialogTitle>
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Typography variant="h5" fontWeight="bold">
-            📊 לוח בקרה ומדדים
+            📊 לוח בקרה ומדדים עצמי
           </Typography>
           <IconButton onClick={onClose}>
             <CloseIcon />
