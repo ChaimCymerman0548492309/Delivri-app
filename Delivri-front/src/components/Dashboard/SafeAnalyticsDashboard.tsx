@@ -107,7 +107,7 @@ const SafeAnalyticsDashboard: React.FC<SafeAnalyticsDashboardProps> = ({
       <DialogContent>
         <Grid container spacing={3}>
           {/* Key Metrics */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid   >
             <StatsCard
               title="סה״כ תחנות"
               value={deliveryStops.length}
@@ -117,7 +117,7 @@ const SafeAnalyticsDashboard: React.FC<SafeAnalyticsDashboardProps> = ({
             />
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid    >
             <StatsCard
               title="שיעור השלמה"
               value={`${Math.round(completionRate)}%`}
@@ -127,7 +127,7 @@ const SafeAnalyticsDashboard: React.FC<SafeAnalyticsDashboardProps> = ({
             />
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid    >
             <StatsCard
               title="זמן ממוצע"
               value={formatTime(averageTimePerStop)}
@@ -137,7 +137,7 @@ const SafeAnalyticsDashboard: React.FC<SafeAnalyticsDashboardProps> = ({
             />
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid    >
             <StatsCard
               title="מרחק ממוצע"
               value={`${(averageDistancePerStop / 1000).toFixed(1)} ק"מ`}
@@ -148,7 +148,7 @@ const SafeAnalyticsDashboard: React.FC<SafeAnalyticsDashboardProps> = ({
           </Grid>
 
           {/* Progress */}
-          <Grid item xs={12}>
+          <Grid  >
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -167,7 +167,7 @@ const SafeAnalyticsDashboard: React.FC<SafeAnalyticsDashboardProps> = ({
           </Grid>
 
           {/* Visual Status - ללא recharts */}
-          <Grid item xs={12} md={6}>
+          <Grid    >
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -204,7 +204,7 @@ const SafeAnalyticsDashboard: React.FC<SafeAnalyticsDashboardProps> = ({
           </Grid>
 
           {/* Route Summary */}
-          <Grid item xs={12} md={6}>
+          <Grid    >
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -263,7 +263,7 @@ const SafeAnalyticsDashboard: React.FC<SafeAnalyticsDashboardProps> = ({
           </Grid>
 
           {/* Time Distribution - ללא recharts */}
-          <Grid item xs={12}>
+          <Grid >
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>

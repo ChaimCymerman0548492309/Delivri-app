@@ -74,7 +74,7 @@ export default function AnalyticsDashboard({ open, onClose }: { open: boolean; o
   const [filter, setFilter] = useState({ time: '7d', city: 'all' });
   const [d, setD] = useState<any>({});
 
-  const load = async (r = false) => {
+  const load = async () => {
     try {
       // r ? setRefreshing(true) : setLoading(true);
       const [activities, times, metrics, events, cities, daily, searches, routes] = await Promise.all([
@@ -181,7 +181,7 @@ export default function AnalyticsDashboard({ open, onClose }: { open: boolean; o
               </Select>
             </FormControl>
             <Tooltip title="רענן">
-              <IconButton onClick={() => load(true)} disabled={refreshing}>
+              <IconButton onClick={() => load()} disabled={refreshing}>
                 <Refresh sx={{ transform: refreshing ? 'rotate(360deg)' : 'none', transition: '0.5s' }} />
               </IconButton>
             </Tooltip>
@@ -190,7 +190,7 @@ export default function AnalyticsDashboard({ open, onClose }: { open: boolean; o
 
         {/* KPI Cards */}
         <Grid container spacing={2} mb={3}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid  >
             <Stat
               t="משתמשים פעילים"
               v={d.metrics?.total_active_users}
@@ -199,7 +199,7 @@ export default function AnalyticsDashboard({ open, onClose }: { open: boolean; o
               col={c.primary.main}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid  >
             <Stat
               t="סך סשנים"
               v={d.metrics?.total_sessions}
@@ -208,7 +208,7 @@ export default function AnalyticsDashboard({ open, onClose }: { open: boolean; o
               col={c.secondary.main}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid  >
             <Stat
               t="משך סשן ממוצע"
               v={`${Math.round(d.metrics?.avg_session_duration_minutes || 0)} דק׳`}
@@ -217,7 +217,7 @@ export default function AnalyticsDashboard({ open, onClose }: { open: boolean; o
               col={c.success.main}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid  >
             <Stat
               t="תחנות ממוצעות"
               v={(d.metrics?.avg_stops_per_user || 0).toFixed(1)}
@@ -252,7 +252,7 @@ export default function AnalyticsDashboard({ open, onClose }: { open: boolean; o
 
         {/* Time & Events */}
         <Grid container spacing={3}>
-          <Grid item xs={12} md={8}>
+          <Grid  >
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" mb={2}>
                 <Schedule sx={{ mr: 1 }} />
@@ -282,7 +282,7 @@ export default function AnalyticsDashboard({ open, onClose }: { open: boolean; o
               </ResponsiveContainer>
             </Paper>
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid  >
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" mb={2}>
                 <PieChart sx={{ mr: 1 }} />
@@ -304,7 +304,7 @@ export default function AnalyticsDashboard({ open, onClose }: { open: boolean; o
 
         {/* Cities & Searches */}
         <Grid container spacing={3} mt={3}>
-          <Grid item xs={12} md={6}>
+          <Grid  >
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" mb={2}>
                 <Place sx={{ mr: 1 }} />
@@ -338,7 +338,7 @@ export default function AnalyticsDashboard({ open, onClose }: { open: boolean; o
               </TableContainer>
             </Paper>
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid  >
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" mb={2}>
                 <Search sx={{ mr: 1 }} />

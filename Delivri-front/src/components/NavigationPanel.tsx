@@ -29,10 +29,10 @@ import {
 } from '@mui/material';
 import { useMemo } from 'react';
 import CityStreetSelector from '../services/CityStreetSelector';
-import { useRouteOptimization } from '../utils/utils';
-import type { DeliveryStop, NavigationStep } from '../types/types';
-import StopListItem from './Markers/StopListItem';
 import StatsAPI from '../services/StatsAPI';
+import type { DeliveryStop, NavigationStep } from '../types/types';
+import { useRouteOptimization } from '../utils/utils';
+import StopListItem from './Markers/StopListItem';
 
 interface NavigationPanelProps {
   isNavigating: boolean;
@@ -108,26 +108,39 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     }
   };
 
-const handleStart = async () => {
-  await logEvent('startNavigation', {
-    stops: deliveryStops.length,
-    currentLocation,
-    routeDistanceKm: totalDistance / 1000,
-    routeDurationMin: Math.round(totalDuration / 60),
-  });
-  onStartNavigation();
-};
+  const handleStart = async () => {
+    // עיר ראשונה במסלול (אם יש)
+    const city = deliveryStops[0]?.address?.split(' ').slice(-1)[0] || 'לא ידוע';
 
-const handleStop = async () => {
-  await logEvent('sessionEnd', {
-    completedStops: currentStopIndex,
-    totalStops: deliveryStops.length,
-    routeDistanceKm: totalDistance / 1000,
-    routeDurationMin: Math.round(totalDuration / 60),
-  });
-  onStopNavigation();
-};
+    await logEvent('startNavigation', {
+      city, // לגרף לפי ערים
+      stops: deliveryStops.length, // לגרף ממוצע תחנות
+      currentLocation, // מידע גאוגרפי
+      routeDistanceKm: totalDistance / 1000, // לגרף route-metrics
+      routeDurationMin: Math.round(totalDuration / 60), // משך ניווט
+      duration: Math.round(totalDuration / 60), // לשדות usage-metrics
+    });
 
+    onStartNavigation();
+  };
+
+  const handleStop = async () => {
+    const city =
+      deliveryStops[currentStopIndex]?.address?.split(' ').slice(-1)[0] ||
+      deliveryStops[0]?.address?.split(' ').slice(-1)[0] ||
+      'לא ידוע';
+
+    await logEvent('sessionEnd', {
+      city,
+      completedStops: currentStopIndex, // לסטטיסטיקות משתמש
+      totalStops: deliveryStops.length,
+      routeDistanceKm: totalDistance / 1000,
+      routeDurationMin: Math.round(totalDuration / 60),
+      duration: Math.round(totalDuration / 60), // לשדות usage-metrics
+    });
+
+    onStopNavigation();
+  };
 
   // const handleStop = async () => {
   //   await logEvent('stopNavigation', { completed: currentStopIndex });
@@ -142,7 +155,6 @@ const handleStop = async () => {
     await logEvent('addStop', { address: fullAddress, coords, city });
     onAddStop(fullAddress, coords);
   };
-
 
   const handleCompleteStop = async (id: string) => {
     await logEvent('completeStop', { stopId: id });

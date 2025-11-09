@@ -1,0 +1,76 @@
+[debug] [2025-11-09T20:52:19.342Z] ----------------------------------------------------------------------
+[debug] [2025-11-09T20:52:19.345Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\chaim\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js init
+[debug] [2025-11-09T20:52:19.345Z] CLI Version:   14.24.1
+[debug] [2025-11-09T20:52:19.345Z] Platform:      win32
+[debug] [2025-11-09T20:52:19.345Z] Node Version:  v22.18.0
+[debug] [2025-11-09T20:52:19.346Z] Time:          Sun Nov 09 2025 22:52:19 GMT+0200 (שעון ישראל (חורף))
+[debug] [2025-11-09T20:52:19.346Z] ----------------------------------------------------------------------
+[debug] 
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  C:\Users\chaim\Desktop\chaim_cymerman\Delivri
+
+[debug] [2025-11-09T20:56:19.594Z] ----------------------------------------------------------------------
+[debug] [2025-11-09T20:56:19.597Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\chaim\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js init hosting
+[debug] [2025-11-09T20:56:19.597Z] CLI Version:   14.24.1
+[debug] [2025-11-09T20:56:19.597Z] Platform:      win32
+[debug] [2025-11-09T20:56:19.597Z] Node Version:  v22.18.0
+[debug] [2025-11-09T20:56:19.598Z] Time:          Sun Nov 09 2025 22:56:19 GMT+0200 (שעון ישראל (חורף))
+[debug] [2025-11-09T20:56:19.598Z] ----------------------------------------------------------------------
+[debug] 
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  C:\Users\chaim\Desktop\chaim_cymerman\Delivri
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] 
+[debug] [2025-11-09T20:56:54.040Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-11-09T20:56:54.041Z] > authorizing via signed-in user (a548492309@gmail.com)
+[debug] [2025-11-09T20:56:54.044Z] Checked if tokens are valid: true, expires at: 1762725116278
+[debug] [2025-11-09T20:56:54.044Z] Checked if tokens are valid: true, expires at: 1762725116278
+[debug] [2025-11-09T20:56:54.047Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=100
+[debug] [2025-11-09T20:56:54.640Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 200
+[debug] [2025-11-09T20:56:54.640Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
+[info] 
+=== Hosting Setup
+[debug] [2025-11-09T20:56:57.184Z] Checked if tokens are valid: true, expires at: 1762725116278
+[debug] [2025-11-09T20:56:57.184Z] Checked if tokens are valid: true, expires at: 1762725116278
+[debug] [2025-11-09T20:56:57.185Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/delivri-4193a [none]
+[debug] [2025-11-09T20:56:57.463Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/delivri-4193a 200
+[debug] [2025-11-09T20:56:57.463Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/delivri-4193a {"projectId":"delivri-4193a","projectNumber":"379076018935","displayName":"delivri","name":"projects/delivri-4193a","resources":{"hostingSite":"delivri-4193a"},"state":"ACTIVE","etag":"1_283bd181-c1cf-4f1c-a52e-cf427699664b"}
+[info] 
+[info] Your public directory is the folder (relative to your project directory) that
+[info] will contain Hosting assets to be uploaded with firebase deploy. If you
+[info] have a build process for your assets, use your build's output directory.
+[info] 
+[debug] [2025-11-09T20:57:56.580Z] ExitPromptError: User force closed the prompt with SIGINT
+    at Interface.sigint (C:\Users\chaim\AppData\Roaming\npm\node_modules\firebase-tools\node_modules\@inquirer\core\dist\commonjs\lib\create-prompt.js:101:37)
+    at Interface.emit (node:events:518:28)
+    at Interface.emit (node:domain:489:12)
+    at [_ttyWrite] [as _ttyWrite] (node:internal/readline/interface:1132:18)
+    at ReadStream.onkeypress (node:internal/readline/interface:271:20)
+    at ReadStream.emit (node:events:530:35)
+    at ReadStream.emit (node:domain:489:12)
+    at emitKeys (node:internal/readline/utils:370:14)
+    at emitKeys.next (<anonymous>)
+    at ReadStream.onData (node:internal/readline/emitKeypressEvents:64:36)
+[error] 
+[error] Error: An unexpected error has occurred.

@@ -49,7 +49,7 @@ const MapViewEnhanced = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [postponeDialogOpen, setPostponeDialogOpen] = useState(false);
-  const [selectedStopId, setSelectedStopId] = useState<string>('');
+  const [, setSelectedStopId] = useState<string>('');
   const [routeError, setRouteError] = useState<string | null>(null);
   const [mapLoadError, setMapLoadError] = useState<string | null>(null);
   const [pendingStop, setPendingStop] = useState<DeliveryStop | null>(null);
@@ -113,9 +113,9 @@ const MapViewEnhanced = () => {
       mapRef.current = null;
     };
   }, []);
-  const handleLocateUser = () => {
-    setLocationPopupOpen(true);
-  };
+  // const handleLocateUser = () => {
+  //   setLocationPopupOpen(true);
+  // };
 
   const handleLocationConfirm = async () => {
     try {

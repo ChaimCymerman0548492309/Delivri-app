@@ -51,6 +51,8 @@ export const useRouteOptimization = () => {
   const geocodeAddress = async (addr: string): Promise<Coordinates | null> =>
     (await geocodeWithPhoton(addr)) || (await geocodeWithNominatim(addr));
 
+
+  
   const optimizeRouteWithTSP = async (coords: Coordinates[]): Promise<Coordinates[]> => {
     if (coords.length <= 2) return coords;
 

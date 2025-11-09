@@ -27,8 +27,9 @@ export const API = {
   },
 
   // === ORS ===
-  ORS_ROUTE_GEOJSON: (key: string) =>
-    `https://api.openrouteservice.org/v2/directions/driving-car/geojson?api_key=${key}`,
+  // ORS_ROUTE_GEOJSON: (key: string) =>
+  //   `https://api.openrouteservice.org/v2/directions/driving-car/geojson?api_key=${key}`,
+  ORS_ROUTE_GEOJSON: () => `/ors/v2/directions/driving-car/geojson`,
 
   ORS_OPTIMIZATION: (key: string) => `https://api.openrouteservice.org/v2/optimization?api_key=${key}`,
 

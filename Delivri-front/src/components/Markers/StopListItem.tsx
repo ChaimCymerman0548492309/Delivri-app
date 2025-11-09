@@ -1,40 +1,28 @@
 import {
-  Add as AddIcon,
   CheckCircle as CheckCircleIcon,
   Delete as DeleteIcon,
-  Directions as DirectionsIcon,
+
   LocationOn as LocationIcon,
   MoreTime as MoreTimeIcon,
   MyLocation as MyLocationIcon,
   Navigation as NavigationIcon,
-  PlayArrow as PlayArrowIcon,
-  Stop as StopIcon,
-  Schedule as ScheduleIcon,
   NearMe as DistanceIcon, // ← שינוי כאן
   AccessTime as AccessTimeIcon,
 } from '@mui/icons-material';
 import {
   Alert,
   Box,
-  Button,
-  Card,
-  CardContent,
+
   Chip,
   CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
+
   IconButton,
   LinearProgress,
-  List,
   ListItem,
   ListItemIcon,
   ListItemText,
-  Paper,
   Tooltip,
   Typography,
-  useMediaQuery,
   Collapse,
   Divider,
   Fade,
