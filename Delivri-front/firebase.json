@@ -4,6 +4,14 @@
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
+        "source": "/photon/**",
+        "run": { "serviceId": "proxy-photon", "region": "us-central1" }
+      },
+      {
+        "source": "/nominatim/**",
+        "run": { "serviceId": "proxy-nominatim", "region": "us-central1" }
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

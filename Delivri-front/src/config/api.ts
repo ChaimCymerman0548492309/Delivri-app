@@ -1,9 +1,11 @@
+const IS_LOCAL = window.location.hostname === 'localhost';
+
 export const API = {
   // === בסיסי ===
-  PHOTON_BASE: '/photon',
-  NOMINATIM_BASE: '/nominatim',
-  OSRM_BASE: '/osrm',
-  ORS_BASE: '/ors',
+  PHOTON_BASE: IS_LOCAL ? '/photon' : 'https://photon.komoot.io',
+  NOMINATIM_BASE: IS_LOCAL ? '/nominatim' : 'https://nominatim.openstreetmap.org',
+  OSRM_BASE: IS_LOCAL ? '/osrm' : 'https://router.project-osrm.org',
+  ORS_BASE: IS_LOCAL ? '/ors' : 'https://api.openrouteservice.org',
   ORS_API_KEY: import.meta.env.VITE_ORS_API_KEY,
 
   // === שירותים חיצוניים ===
@@ -27,9 +29,7 @@ export const API = {
   },
 
   // === ORS ===
-  // ORS_ROUTE_GEOJSON: (key: string) =>
-  //   `https://api.openrouteservice.org/v2/directions/driving-car/geojson?api_key=${key}`,
-  ORS_ROUTE_GEOJSON: () => `/ors/v2/directions/driving-car/geojson`,
+  ORS_ROUTE_GEOJSON: () => `${API.ORS_BASE}/v2/directions/driving-car/geojson?api_key=${API.ORS_API_KEY}`,
 
   ORS_OPTIMIZATION: (key: string) => `https://api.openrouteservice.org/v2/optimization?api_key=${key}`,
 
