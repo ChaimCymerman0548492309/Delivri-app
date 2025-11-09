@@ -24,6 +24,7 @@ import RouteErrorHandler from '../pages/RouteErrorHandler';
 
 // Hooks
 import { useApiTimer } from '../hooks/useApiTimer';
+import LocationPermissionPopup from '../pages/LocationPermissionPopup';
 import type { DeliveryStop, NavigationStep } from '../types/types';
 import { cleanupMap, initializeMap, useGeolocation } from '../utils/mapUtils';
 import { useRouteOptimization } from '../utils/utils';
@@ -54,6 +55,7 @@ const MapViewEnhanced = () => {
   const [routeLoading, setRouteLoading] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null);
   const [tracking, setTracking] = useState(false);
+  const [locationPopupOpen, setLocationPopupOpen] = useState(true);
 
   const handleConfirmPostpone = () => {
     if (!pendingStop) return;
@@ -109,12 +111,15 @@ const MapViewEnhanced = () => {
       mapRef.current = null;
     };
   }, []);
+  const handleLocateUser = () => {
+    setLocationPopupOpen(true);
+  };
 
-  const handleLocateUser = async () => {
+  const handleLocationConfirm = async () => {
     try {
-      const pos = await getCurrentLocation(); // נדרשת פעולה מהמשתמש
+      const pos = await getCurrentLocation();
       setCurrentLocation(pos);
-      setTracking(true); // מפעיל את ה־useEffect הבא
+      setTracking(true);
     } catch {
       setMapLoadError('אין הרשאה למיקום');
     }
@@ -132,8 +137,20 @@ const MapViewEnhanced = () => {
 
         if (!marker) {
           const el = document.createElement('div');
-          el.className = 'user-location-marker';
-          marker = new maplibregl.Marker(el).setLngLat(coords).addTo(map);
+          el.className = 'user-location-arrow';
+          el.innerHTML = `
+  <svg width="30" height="30" viewBox="0 0 24 24" fill="#2196f3" stroke="white" stroke-width="2" stroke-linejoin="round">
+    <path d="M12 2 L19 21 L12 17 L5 21 Z" />
+  </svg>
+`;
+
+          marker = new maplibregl.Marker({
+            element: el,
+            rotationAlignment: 'map', // כך החץ יישאר עם כיוון המפה
+            anchor: 'center',
+          })
+            .setLngLat(coords)
+            .addTo(map);
         } else {
           marker.setLngLat(coords);
         }
@@ -450,10 +467,14 @@ const MapViewEnhanced = () => {
       <ThemeProvider theme={theme}>
         <Box sx={{ display: 'flex', height: '100vh', flexDirection: 'column' }}>
           {/* Header */}
-          <Button variant="contained" color="primary" onClick={handleLocateUser}>
+          {/* <Button variant="contained" color="primary" onClick={handleLocateUser}>
             📍 מצא את המיקום שלי
-          </Button>
-
+          </Button> */}
+          <LocationPermissionPopup
+            open={locationPopupOpen}
+            onClose={() => setLocationPopupOpen(false)}
+            onConfirm={handleLocationConfirm}
+          />
           <Header
             onMenuToggle={handleDrawerToggle}
             onLocationFocus={focusOnUserLocation}
