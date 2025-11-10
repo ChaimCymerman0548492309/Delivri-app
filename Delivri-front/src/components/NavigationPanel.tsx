@@ -7,6 +7,7 @@ import {
   MyLocation as MyLocationIcon,
   PlayArrow as PlayArrowIcon,
   Stop as StopIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
 import {
   Alert,
@@ -26,6 +27,7 @@ import {
   Tooltip,
   Typography,
   useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { useMemo } from 'react';
 import CityStreetSelector from '../services/CityStreetSelector';
@@ -82,8 +84,13 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   onCancelPostpone,
   onClosePanel,
 }) => {
+  const theme = useTheme();
   const isMobile = useMediaQuery('(max-width:768px)');
+  const isTablet = useMediaQuery('(max-width:1024px)');
   const { geocodeAddress } = useRouteOptimization();
+
+  const MAX_STOPS = 10;
+  const isMaxStopsReached = deliveryStops.length >= MAX_STOPS;
 
   const formatTime = (seconds: number) => {
     const minutes = Math.round(seconds / 60);
@@ -109,16 +116,15 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   };
 
   const handleStart = async () => {
-    // עיר ראשונה במסלול (אם יש)
     const city = deliveryStops[0]?.address?.split(' ').slice(-1)[0] || 'לא ידוע';
 
     await logEvent('startNavigation', {
-      city, // לגרף לפי ערים
-      stops: deliveryStops.length, // לגרף ממוצע תחנות
-      currentLocation, // מידע גאוגרפי
-      routeDistanceKm: totalDistance / 1000, // לגרף route-metrics
-      routeDurationMin: Math.round(totalDuration / 60), // משך ניווט
-      duration: Math.round(totalDuration / 60), // לשדות usage-metrics
+      city,
+      stops: deliveryStops.length,
+      currentLocation,
+      routeDistanceKm: totalDistance / 1000,
+      routeDurationMin: Math.round(totalDuration / 60),
+      duration: Math.round(totalDuration / 60),
     });
 
     onStartNavigation();
@@ -132,26 +138,22 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
 
     await logEvent('sessionEnd', {
       city,
-      completedStops: currentStopIndex, // לסטטיסטיקות משתמש
+      completedStops: currentStopIndex,
       totalStops: deliveryStops.length,
       routeDistanceKm: totalDistance / 1000,
       routeDurationMin: Math.round(totalDuration / 60),
-      duration: Math.round(totalDuration / 60), // לשדות usage-metrics
+      duration: Math.round(totalDuration / 60),
     });
 
     onStopNavigation();
   };
 
-  // const handleStop = async () => {
-  //   await logEvent('stopNavigation', { completed: currentStopIndex });
-  //   onStopNavigation();
-  // };
-
-  // const handleAddStop = async (fullAddress: string, coords: [number, number]) => {
-  //   await logEvent('addStop', { address: fullAddress, coords });
-  //   onAddStop(fullAddress, coords);
-  // };
   const handleAddStop = async (fullAddress: string, coords: [number, number], city?: string) => {
+    if (isMaxStopsReached) {
+      alert(`בגרסה הנוכחית ניתן להוסיף עד ${MAX_STOPS} תחנות בלבד`);
+      return;
+    }
+
     await logEvent('addStop', { address: fullAddress, coords, city });
     onAddStop(fullAddress, coords);
   };
@@ -173,40 +175,55 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
 
   return (
     <Paper
-      elevation={3}
+      elevation={isMobile ? 0 : 3}
       sx={{
-        width: isMobile ? '100%' : 420,
-        height: isMobile ? 'auto' : '100vh',
+        width: isMobile ? '100vw' : isTablet ? 380 : 420,
+        height: isMobile ? '100vh' : '100%',
+        maxHeight: isMobile ? '100vh' : 'none',
         display: 'flex',
         flexDirection: 'column',
         borderRadius: isMobile ? 0 : 2,
         overflow: 'hidden',
         direction: 'rtl',
+        position: isMobile ? 'fixed' : 'relative',
+        top: 0,
+        left: 0,
+        zIndex: theme.zIndex.drawer,
       }}>
       {/* Header */}
       <Box
         sx={{
-          p: 2,
+          p: isMobile ? 1.5 : 2,
           bgcolor: 'primary.main',
           color: 'white',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          flexShrink: 0,
         }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <DirectionsIcon />
-          <Typography variant="h6">מנהל מסלול המשלוחים</Typography>
+          <DirectionsIcon sx={{ fontSize: isMobile ? 20 : 24 }} />
+          <Typography variant={isMobile ? 'subtitle1' : 'h6'} fontWeight="bold">
+            מנהל מסלול
+          </Typography>
         </Box>
         <Tooltip title="סגירה">
-          <IconButton color="inherit" onClick={onClosePanel}>
-            <CloseIcon />
+          <IconButton color="inherit" onClick={onClosePanel} size={isMobile ? 'small' : 'medium'}>
+            <CloseIcon sx={{ fontSize: isMobile ? 20 : 24 }} />
           </IconButton>
         </Tooltip>
       </Box>
 
       {/* Location Status */}
       {currentLocation && (
-        <Box sx={{ px: 2, py: 1, bgcolor: 'primary.dark', color: 'white' }}>
+        <Box
+          sx={{
+            px: isMobile ? 1.5 : 2,
+            py: 1,
+            bgcolor: 'primary.dark',
+            color: 'white',
+            flexShrink: 0,
+          }}>
           <Typography variant="caption" sx={{ display: 'flex', alignItems: 'center' }}>
             <MyLocationIcon sx={{ fontSize: 14, ml: 0.5 }} />
             מיקום נוכחי זמין
@@ -224,17 +241,24 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
             bgcolor: 'primary.light',
             height: 4,
             '& .MuiLinearProgress-bar': { bgcolor: 'white' },
+            flexShrink: 0,
           }}
         />
       )}
 
       {/* Controls */}
-      <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+      <Box
+        sx={{
+          p: isMobile ? 1.5 : 2,
+          borderBottom: 1,
+          borderColor: 'divider',
+          flexShrink: 0,
+        }}>
         <Button
           fullWidth
           variant={isNavigating ? 'outlined' : 'contained'}
           color={isNavigating ? 'error' : 'primary'}
-          size="large"
+          size={isMobile ? 'medium' : 'large'}
           startIcon={
             isNavigating ? (
               <StopIcon />
@@ -246,31 +270,63 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
           }
           onClick={isNavigating ? handleStop : handleStart}
           disabled={routeLoading || !ready || (!isNavigating && (!currentLocation || deliveryStops.length === 0))}
-          sx={{ py: 1.2, mb: 1 }}>
-          {isNavigating ? 'עצירת הניווט' : `התחל ניווט (${deliveryStops.length})`}
+          sx={{
+            py: isMobile ? 1 : 1.2,
+            mb: 1,
+            fontSize: isMobile ? '0.875rem' : '1rem',
+          }}>
+          {isNavigating ? 'עצור ניווט' : `התחל (${deliveryStops.length})`}
         </Button>
 
         {routeError && (
-          <Alert severity="error" sx={{ textAlign: 'right' }}>
+          <Alert severity="error" sx={{ textAlign: 'right', fontSize: isMobile ? '0.75rem' : '0.875rem' }}>
             {routeError}
           </Alert>
         )}
 
+        {isMaxStopsReached && (
+          <Alert
+            severity="warning"
+            icon={<WarningIcon />}
+            sx={{
+              textAlign: 'right',
+              fontSize: isMobile ? '0.75rem' : '0.875rem',
+              mt: 1,
+            }}>
+            הגעת למקסימום {MAX_STOPS} תחנות בגרסה זו
+          </Alert>
+        )}
+
         {isNavigating && (
-          <Card sx={{ bgcolor: 'primary.light', color: 'white', mt: 1 }}>
-            <CardContent sx={{ py: 2 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="body2">מרחק כולל</Typography>
-                  <Typography variant="h6">{(totalDistance / 1000).toFixed(1)} ק״מ</Typography>
+          <Card
+            sx={{
+              bgcolor: 'primary.light',
+              color: 'white',
+              mt: 1,
+              '& .MuiCardContent-root': { py: isMobile ? 1.5 : 2 },
+            }}>
+            <CardContent>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: isMobile ? 1 : 2,
+                }}>
+                <Box sx={{ textAlign: 'center', flex: 1 }}>
+                  <Typography variant={isMobile ? 'caption' : 'body2'}>מרחק</Typography>
+                  <Typography variant={isMobile ? 'body2' : 'h6'} fontWeight="bold">
+                    {(totalDistance / 1000).toFixed(1)} ק״מ
+                  </Typography>
                 </Box>
-                <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="body2">משך משוער</Typography>
-                  <Typography variant="h6">{formatTime(totalDuration)}</Typography>
+                <Box sx={{ textAlign: 'center', flex: 1 }}>
+                  <Typography variant={isMobile ? 'caption' : 'body2'}>משך</Typography>
+                  <Typography variant={isMobile ? 'body2' : 'h6'} fontWeight="bold">
+                    {formatTime(totalDuration)}
+                  </Typography>
                 </Box>
-                <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="body2">תחנה נוכחית</Typography>
-                  <Typography variant="h6">
+                <Box sx={{ textAlign: 'center', flex: 1 }}>
+                  <Typography variant={isMobile ? 'caption' : 'body2'}>תחנה</Typography>
+                  <Typography variant={isMobile ? 'body2' : 'h6'} fontWeight="bold">
                     {currentStopIndex + 1}/{deliveryStops.length}
                   </Typography>
                 </Box>
@@ -281,27 +337,63 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
       </Box>
 
       {/* Add Stop */}
-      <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-        <Typography variant="subtitle1" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-          <AddIcon /> הוספת תחנה חדשה
+      <Box
+        sx={{
+          p: isMobile ? 1.5 : 2,
+          borderBottom: 1,
+          borderColor: 'divider',
+          flexShrink: 0,
+        }}>
+        <Typography
+          variant="subtitle2"
+          sx={{
+            mb: 2,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            fontSize: isMobile ? '0.875rem' : '1rem',
+          }}>
+          <AddIcon sx={{ fontSize: isMobile ? 18 : 20 }} />
+          הוספת תחנה {isMaxStopsReached && `(מקסימום ${MAX_STOPS})`}
         </Typography>
         <CityStreetSelector
           onSelect={async (city, street, houseNumber) => {
+            if (isMaxStopsReached) {
+              alert(`בגרסה הנוכחית ניתן להוסיף עד ${MAX_STOPS} תחנות בלבד`);
+              return;
+            }
+
             const fullAddress = `${street} ${houseNumber || ''} ${city}`.trim();
             const result = await geocodeAddress(fullAddress);
             if (result) handleAddStop(fullAddress, result, city);
             else alert('לא הצלחנו לאתר את הכתובת שבחרת');
           }}
+          // disabled={isMaxStopsReached}
         />
       </Box>
 
       {/* Stops List */}
-      <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
-        <Typography variant="subtitle1" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-          <LocationIcon /> תחנות המסלול ({deliveryStops.length})
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: 'auto',
+          p: isMobile ? 1.5 : 2,
+          minHeight: 0, // Important for flexbox scrolling
+        }}>
+        <Typography
+          variant="subtitle2"
+          sx={{
+            mb: 2,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            fontSize: isMobile ? '0.875rem' : '1rem',
+          }}>
+          <LocationIcon sx={{ fontSize: isMobile ? 18 : 20 }} />
+          בגרסה הנוכחית ניתן להוסיף עד 10 תחנות  ({deliveryStops.length}/{MAX_STOPS})
         </Typography>
 
-        <List>
+        <List sx={{ py: 0 }}>
           {deliveryStops.map((stop, index) => (
             <StopListItem
               key={stop.id}
@@ -313,24 +405,30 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
               onRemove={() => handleRemoveStop(stop.id)}
               onPostpone={() => handlePostponeStop(stop.id)}
               currentLocation={currentLocation}
+              // compact={isMobile}
             />
           ))}
         </List>
       </Box>
 
       {/* Postpone Dialog */}
-      <Dialog open={postponeDialogOpen} onClose={onCancelPostpone}>
+      <Dialog open={postponeDialogOpen} onClose={onCancelPostpone} fullScreen={isMobile}>
         <DialogTitle sx={{ direction: 'rtl' }}>דחיית תחנה</DialogTitle>
         <DialogContent sx={{ direction: 'rtl' }}>
           <Typography>
             {pendingStop ? `האם ברצונך לדחות את "${pendingStop.address}" לסוף?` : 'האם לדחות את התחנה לסוף המסלול?'}
           </Typography>
         </DialogContent>
-        <DialogActions sx={{ direction: 'rtl', gap: 1 }}>
-          <Button onClick={onCancelPostpone} color="inherit">
+        <DialogActions sx={{ direction: 'rtl', gap: 1, p: 2 }}>
+          <Button onClick={onCancelPostpone} color="inherit" size={isMobile ? 'large' : 'medium'} fullWidth={isMobile}>
             ביטול
           </Button>
-          <Button onClick={onConfirmPostpone} variant="contained" color="primary">
+          <Button
+            onClick={onConfirmPostpone}
+            variant="contained"
+            color="primary"
+            size={isMobile ? 'large' : 'medium'}
+            fullWidth={isMobile}>
             דחייה
           </Button>
         </DialogActions>

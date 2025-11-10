@@ -58,6 +58,20 @@ const MapViewEnhanced = () => {
   const [tracking, setTracking] = useState(false);
   const [locationPopupOpen, setLocationPopupOpen] = useState(true);
   const [openAnalyticsDashboard, setOpenAnalyticsDashboard] = useState<boolean>(false);
+  const isMobile = useMediaQuery('(max-width:768px)');
+
+  const theme = createTheme({
+    direction: 'rtl',
+    palette: {
+      primary: { main: '#1976d2' },
+      secondary: { main: '#dc004e' },
+      error: { main: '#f44336' },
+      warning: { main: '#ff9800' },
+    },
+  });
+
+  const { locationAccuracy, getCurrentLocation } = useGeolocation();
+  const { timings, loading, trackApiCall } = useApiTimer();
 
   const handleConfirmPostpone = () => {
     if (!pendingStop) return;
@@ -74,20 +88,6 @@ const MapViewEnhanced = () => {
     setPendingStop(null);
   };
 
-  const isMobile = useMediaQuery('(max-width:768px)');
-
-  const { locationAccuracy, getCurrentLocation } = useGeolocation();
-  const { timings, loading, trackApiCall } = useApiTimer();
-
-  const theme = createTheme({
-    direction: 'rtl',
-    palette: {
-      primary: { main: '#1976d2' },
-      secondary: { main: '#dc004e' },
-      error: { main: '#f44336' },
-      warning: { main: '#ff9800' },
-    },
-  });
 
   // אתחול מפה (רק פעם אחת)
   useEffect(() => {
@@ -174,6 +174,10 @@ const MapViewEnhanced = () => {
     const saved = localStorage.getItem('deliveryStops');
     if (saved) setDeliveryStops(JSON.parse(saved));
   }, []);
+useEffect(() => {
+  fetch('https://photon.komoot.io/api/?q=tel+aviv&limit=1');
+  fetch('https://nominatim.openstreetmap.org/search?format=json&q=haifa&limit=1');
+}, []);
 
   useEffect(() => {
     if (isNavigating && navigationSteps.length > 0) {

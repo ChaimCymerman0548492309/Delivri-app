@@ -48,8 +48,23 @@ export const useRouteOptimization = () => {
     }
   };
 
-  const geocodeAddress = async (addr: string): Promise<Coordinates | null> =>
-  (await geocodeWithNominatim(addr)) || (await geocodeWithPhoton(addr)) ;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+const geocodeAddress = async (addr: string): Promise<Coordinates | null> => {
+  // ניסיון ראשון
+  let result = (await geocodeWithPhoton(addr)) || (await geocodeWithNominatim(addr));
+
+  // אם אין תוצאה, נסה שוב אחרי חצי שנייה
+  if (!result) {
+    console.warn('⚠️ geocode failed first try, retrying...');
+    await sleep(700);
+    result = (await geocodeWithNominatim(addr)) || (await geocodeWithPhoton(addr));
+  }
+
+
+
+  return result;
+};
 
 
   
