@@ -8,6 +8,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { logger } from '../utils/logger';
 
 interface Props {
   onSelect: (city: string, street: string, houseNumber?: string) => void;
@@ -47,7 +48,7 @@ const CityStreetSelector: React.FC<Props> = ({ onSelect }) => {
         ).sort((a, b) => a.localeCompare(b, 'he'));
         setCities(uniqueCities);
       } catch (error) {
-        console.error('Failed to load city list', error);
+        logger.error('Failed to load city list', error);
       } finally {
         setLoading(false);
       }

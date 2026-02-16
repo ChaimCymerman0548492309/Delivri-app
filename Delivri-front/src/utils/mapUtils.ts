@@ -2,6 +2,7 @@ import * as maplibregl from 'maplibre-gl';
 import type { Map } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useState } from 'react';
+import { logger } from './logger';
 
 export const initializeMap = (container: HTMLElement, onLoad: () => void) => {
   const map = new maplibregl.Map({
@@ -80,7 +81,7 @@ const getCurrentLocation = async (): Promise<[number, number]> => {
         setLocationAccuracy(position.coords.accuracy);
         onUpdate(coords, position.coords.accuracy);
       },
-      console.error,
+      (error) => logger.error('Geolocation watch failed', error),
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 },
     );
 
