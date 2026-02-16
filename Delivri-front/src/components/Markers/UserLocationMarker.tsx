@@ -2,6 +2,7 @@ import type { Feature, Point } from 'geojson';
 import type { Map } from 'maplibre-gl';
 import * as maplibregl from 'maplibre-gl';
 import { useEffect, useRef } from 'react';
+import { logger } from '../../utils/logger';
 
 interface UserLocationMarkerProps {
   location: [number, number];
@@ -80,7 +81,7 @@ const UserLocationMarker: React.FC<UserLocationMarkerProps> = ({ location, map, 
           map.removeLayer(ACCURACY_SOURCE_ID);
         }
       } catch (error) {
-        console.debug('Layer already removed:', error);
+        logger.debug('Layer already removed', error);
       }
 
       try {
@@ -88,7 +89,7 @@ const UserLocationMarker: React.FC<UserLocationMarkerProps> = ({ location, map, 
           map.removeSource(ACCURACY_SOURCE_ID);
         }
       } catch (error) {
-        console.debug('Source already removed:', error);
+        logger.debug('Source already removed', error);
       }
     };
   }, [map, location, accuracy]);

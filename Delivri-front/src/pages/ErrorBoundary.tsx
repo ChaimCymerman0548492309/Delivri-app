@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Box, Typography, Button, Paper } from '@mui/material';
 import { Refresh as RefreshIcon, Warning as WarningIcon } from '@mui/icons-material';
+import { logger } from '../utils/logger';
 
 interface Props {
   children: ReactNode;
@@ -21,8 +22,7 @@ class AppErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('🚨 Application error:', error);
-    console.error('Error details:', errorInfo);
+    logger.error('Application error boundary caught an exception', { error, errorInfo });
   }
 
   render() {

@@ -26,6 +26,7 @@ import RouteErrorHandler from '../pages/RouteErrorHandler';
 import { useApiTimer } from '../hooks/useApiTimer';
 import LocationPermissionPopup from '../pages/LocationPermissionPopup';
 import type { DeliveryStop, NavigationStep } from '../types/types';
+import { logger } from '../utils/logger';
 import { cleanupMap, initializeMap, useGeolocation } from '../utils/mapUtils';
 import { useRouteOptimization } from '../utils/utils';
 import SafeAnalyticsDashboard from './Dashboard/SafeAnalyticsDashboard';
@@ -96,15 +97,15 @@ const MapViewEnhanced = () => {
       mapRef.current = initializeMap(containerRef.current, () => {
         setReady(true);
         setMapLoadError(null);
-        console.log('✅ Map initialized successfully');
+        logger.info('Map initialized successfully');
       });
 
       mapRef.current.on('error', (e) => {
-        console.error('Map error:', e);
+        logger.error('Map error', e);
         setMapLoadError('שגיאה בטעינת המפה');
       });
     } catch (e) {
-      console.error('Map init error:', e);
+      logger.error('Map initialization failed', e);
       setMapLoadError('שגיאה באתחול המפה');
     }
 
@@ -159,7 +160,7 @@ const MapViewEnhanced = () => {
 
         map.flyTo({ center: coords, zoom: 15, essential: true });
       },
-      (err) => console.error('שגיאת מיקום:', err),
+      (err) => logger.error('Live location tracking error', err),
       { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 },
     );
 
@@ -167,24 +168,36 @@ const MapViewEnhanced = () => {
   }, [tracking]);
 
   useEffect(() => {
-    localStorage.setItem('deliveryStops', JSON.stringify(deliveryStops));
+    try {
+      localStorage.setItem('deliveryStops', JSON.stringify(deliveryStops));
+    } catch (error) {
+      logger.warn('Failed to persist delivery stops locally', error);
+    }
   }, [deliveryStops]);
 
   useEffect(() => {
-    const saved = localStorage.getItem('deliveryStops');
-    if (saved) setDeliveryStops(JSON.parse(saved));
+    try {
+      const saved = localStorage.getItem('deliveryStops');
+      if (!saved) {
+        return;
+      }
+
+      const parsed = JSON.parse(saved) as DeliveryStop[];
+      if (Array.isArray(parsed)) {
+        setDeliveryStops(parsed);
+      }
+    } catch (error) {
+      logger.warn('Failed to restore delivery stops from local storage', error);
+      localStorage.removeItem('deliveryStops');
+    }
   }, []);
-useEffect(() => {
-  fetch('https://photon.komoot.io/api/?q=tel+aviv&limit=1');
-  fetch('https://nominatim.openstreetmap.org/search?format=json&q=haifa&limit=1');
-}, []);
 
   useEffect(() => {
     if (isNavigating && navigationSteps.length > 0) {
       const step = navigationSteps[currentStopIndex];
       if (step) speechSynthesis.speak(new SpeechSynthesisUtterance(step.instruction));
     }
-  }, [currentStopIndex, isNavigating]);
+  }, [currentStopIndex, isNavigating, navigationSteps]);
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -245,7 +258,7 @@ useEffect(() => {
         return false;
       }
 
-      console.log('🔄 טוען מסלול עם', coords.length, 'נקודות');
+      logger.info('Loading route', { points: coords.length });
 
       const optimizedCoords = await trackApiCall(() => optimizeRouteWithTSP(coords), 'אופטימיזציית מסלול');
 
@@ -306,20 +319,20 @@ useEffect(() => {
         );
         map.fitBounds(bounds, { padding: 100, duration: 1000 });
       } catch (mapError) {
-        console.error('Error drawing route on map:', mapError);
+        logger.error('Error drawing route on map', mapError);
         setRouteError('שגיאה בציור המסלול על המפה');
       }
 
       return true;
     } catch (err) {
-      console.error('Error loading route:', err);
+      logger.error('Error loading route', err);
 
       const errorMessage = err instanceof Error ? err.message : 'שגיאה לא ידועה בטעינת המסלול';
       setRouteError(errorMessage);
 
       // ניסיון חוזר אוטומטי (מקסימום 2 ניסיונות)
       if (retryCount < 2) {
-        console.log(`🔄 מנסה שוב... ניסיון ${retryCount + 1}`);
+        logger.warn('Retrying route loading', { attempt: retryCount + 1 });
         setTimeout(() => loadRoute(retryCount + 1), 2000);
       }
 
@@ -424,7 +437,7 @@ useEffect(() => {
           setCurrentLocation(coords);
           mapRef.current?.flyTo({ center: coords, zoom: 15, essential: true });
         },
-        (err) => console.error('Location watch error:', err),
+        (err) => logger.error('Navigation location watch error', err),
         { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 },
       );
     }
@@ -486,14 +499,16 @@ useEffect(() => {
             onMenuToggle={handleDrawerToggle}
             onLocationFocus={focusOnUserLocation}
             onShowAnalytics={() => setAnalyticsOpen(true)}
-            setOpenAnalyticsDashboard={() => setOpenAnalyticsDashboard(prev => !prev)}
+            setOpenAnalyticsDashboard={() => setOpenAnalyticsDashboard((prev) => !prev)}
             deliveryStopsCount={deliveryStops.length}
             isNavigating={isNavigating}
-            />
+          />
 
           {/* Main Content */}
           <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
-            {openAnalyticsDashboard && <AnalyticsDashboard open={openAnalyticsDashboard} onClose={() => setOpenAnalyticsDashboard(false)} />}
+            {openAnalyticsDashboard && (
+              <AnalyticsDashboard open={openAnalyticsDashboard} onClose={() => setOpenAnalyticsDashboard(false)} />
+            )}
             {/* Map Container */}
             <Box sx={{ flex: 1, position: 'relative' }}>
               <div ref={containerRef} style={{ width: '100%', height: '100%' }} />

@@ -2,6 +2,7 @@
 import type { LineString } from 'geojson';
 import { API } from '../config/api';
 import type { RouteStep } from '../types/types';
+import { logger } from './logger';
 
 type Coordinates = [number, number];
 
@@ -56,7 +57,7 @@ const geocodeAddress = async (addr: string): Promise<Coordinates | null> => {
 
   // אם אין תוצאה, נסה שוב אחרי חצי שנייה
   if (!result) {
-    console.warn('⚠️ geocode failed first try, retrying...');
+    logger.warn('Geocode failed first try, retrying', { address: addr });
     await sleep(700);
     result = (await geocodeWithNominatim(addr)) || (await geocodeWithPhoton(addr));
   }
@@ -102,7 +103,8 @@ const geocodeAddress = async (addr: string): Promise<Coordinates | null> => {
       }
 
       return visited.map((index) => coords[index]);
-    } catch {
+    } catch (error) {
+      logger.warn('Route optimization fallback to original order', error);
       return coords;
     }
   };
@@ -125,7 +127,7 @@ const getRouteData = async (coords: Coordinates[]): Promise<RouteSummary | null>
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error('ORS request failed:', response.status, errText);
+      logger.error('ORS request failed', { status: response.status, error: errText });
       throw new Error(`ORS API error ${response.status}: ${errText}`);
     }
 
@@ -133,7 +135,7 @@ const getRouteData = async (coords: Coordinates[]): Promise<RouteSummary | null>
 
     const feature = data.features?.[0];
     if (!feature?.geometry?.coordinates) {
-      console.error('Invalid GeoJSON response:', data);
+      logger.error('Invalid ORS GeoJSON response', data);
       throw new Error('Invalid ORS response — no valid geometry.');
     }
 
@@ -156,8 +158,8 @@ const getRouteData = async (coords: Coordinates[]): Promise<RouteSummary | null>
       geometry: feature.geometry,
       steps,
     };
-  } catch (error: any) {
-    console.error('getRouteData error:', error?.message || error);
+  } catch (error: unknown) {
+    logger.error('getRouteData error', error);
     return null;
   }
 };

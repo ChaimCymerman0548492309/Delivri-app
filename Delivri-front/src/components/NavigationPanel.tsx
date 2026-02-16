@@ -33,6 +33,7 @@ import { useMemo } from 'react';
 import CityStreetSelector from '../services/CityStreetSelector';
 import StatsAPI from '../services/StatsAPI';
 import type { DeliveryStop, NavigationStep } from '../types/types';
+import { logger } from '../utils/logger';
 import { useRouteOptimization } from '../utils/utils';
 import StopListItem from './Markers/StopListItem';
 
@@ -106,19 +107,18 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   }, [currentStopIndex, deliveryStops.length, isNavigating]);
 
   // === Event Logging Helper ===
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const logEvent = async (type: string, data?: Record<string, any>) => {
+  const logEvent = async (type: string, data?: Record<string, unknown>) => {
     try {
       await StatsAPI.postEvent({ type, data });
     } catch (err) {
-      console.warn('Event log failed:', err);
+      logger.warn('Event log failed', { type, err });
     }
   };
 
-  const handleStart = async () => {
+  const handleStart = () => {
     const city = deliveryStops[0]?.address?.split(' ').slice(-1)[0] || 'לא ידוע';
 
-    await logEvent('startNavigation', {
+    void logEvent('startNavigation', {
       city,
       stops: deliveryStops.length,
       currentLocation,
@@ -130,13 +130,13 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     onStartNavigation();
   };
 
-  const handleStop = async () => {
+  const handleStop = () => {
     const city =
       deliveryStops[currentStopIndex]?.address?.split(' ').slice(-1)[0] ||
       deliveryStops[0]?.address?.split(' ').slice(-1)[0] ||
       'לא ידוע';
 
-    await logEvent('sessionEnd', {
+    void logEvent('sessionEnd', {
       city,
       completedStops: currentStopIndex,
       totalStops: deliveryStops.length,
@@ -148,28 +148,28 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     onStopNavigation();
   };
 
-  const handleAddStop = async (fullAddress: string, coords: [number, number], city?: string) => {
+  const handleAddStop = (fullAddress: string, coords: [number, number], city?: string) => {
     if (isMaxStopsReached) {
       alert(`בגרסה הנוכחית ניתן להוסיף עד ${MAX_STOPS} תחנות בלבד`);
       return;
     }
 
-    await logEvent('addStop', { address: fullAddress, coords, city });
+    void logEvent('addStop', { address: fullAddress, coords, city });
     onAddStop(fullAddress, coords);
   };
 
-  const handleCompleteStop = async (id: string) => {
-    await logEvent('completeStop', { stopId: id });
+  const handleCompleteStop = (id: string) => {
+    void logEvent('completeStop', { stopId: id });
     onCompleteStop(id);
   };
 
-  const handleRemoveStop = async (id: string) => {
-    await logEvent('removeStop', { stopId: id });
+  const handleRemoveStop = (id: string) => {
+    void logEvent('removeStop', { stopId: id });
     onRemoveStop(id);
   };
 
-  const handlePostponeStop = async (id: string) => {
-    await logEvent('postponeStop', { stopId: id });
+  const handlePostponeStop = (id: string) => {
+    void logEvent('postponeStop', { stopId: id });
     onPostponeStop(id);
   };
 
