@@ -118,13 +118,19 @@ const MapViewEnhanced = () => {
   //   setLocationPopupOpen(true);
   // };
 
-  const handleLocationConfirm = async () => {
+  const handleLocationConfirm = async (): Promise<string | null> => {
     try {
       const pos = await getCurrentLocation();
       setCurrentLocation(pos);
       setTracking(true);
-    } catch {
-      setMapLoadError('אין הרשאה למיקום');
+      setMapLoadError(null);
+      return null;
+    } catch (error) {
+      const defaultMessage = 'לא ניתן לקבל גישה למיקום. בדקו הרשאות דפדפן ונסו שוב.';
+      if (error instanceof Error && error.message) {
+        return error.message;
+      }
+      return defaultMessage;
     }
   };
 

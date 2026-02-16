@@ -43,37 +43,66 @@ export const useGeolocation = () => {
   const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null);
   const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
 
-const getCurrentLocation = async (): Promise<[number, number]> => {
-  if (!navigator.geolocation) {
-    throw new Error('דפדפן זה לא תומך במיקום גיאוגרפי');
-  }
+  const resolveGeolocationError = (error: GeolocationPositionError): string => {
+    switch (error.code) {
+      case 1:
+        return 'הגישה למיקום חסומה. יש לאפשר הרשאת מיקום בהגדרות הדפדפן ולנסות שוב.';
+      case 2:
+        return 'לא הצלחנו לזהות את המיקום. בדקו GPS/קליטה ונסו שוב.';
+      case 3:
+        return 'תם הזמן לקבלת מיקום. נסו שוב בעוד רגע.';
+      default:
+        return 'אירעה שגיאה בקבלת המיקום. נסו שוב.';
+    }
+  };
 
-  // בדוק הרשאה
-  const perm = await navigator.permissions.query({ name: 'geolocation' as PermissionName });
-  if (perm.state === 'denied') {
-    alert('יש לאשר גישה למיקום כדי להשתמש באפליקציה');
-    throw new Error('גישה למיקום נדחתה');
-  }
+  const getCurrentLocation = async (): Promise<[number, number]> => {
+    if (!window.isSecureContext) {
+      throw new Error('גישה למיקום זמינה רק בחיבור מאובטח (HTTPS).');
+    }
 
-  return new Promise((resolve, reject) => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const coords: [number, number] = [pos.coords.longitude, pos.coords.latitude];
-        resolve(coords);
-      },
-      (err) => {
-        if (err.code === err.PERMISSION_DENIED) {
-          alert('אנא אשר גישה למיקום בדפדפן');
-        }
-        reject(err);
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
-    );
-  });
-};
+    if (!navigator.geolocation) {
+      throw new Error('דפדפן זה לא תומך במיקום גיאוגרפי.');
+    }
+
+    let permissionState: PermissionState | null = null;
+    if (navigator.permissions?.query) {
+      try {
+        const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
+        permissionState = permissionStatus.state;
+      } catch (error) {
+        // בדפדפנים מסוימים (כמו Safari), permissions.query עבור geolocation לא נתמך באופן מלא.
+        console.warn('Permissions API unavailable for geolocation, falling back to direct request.', error);
+      }
+    }
+
+    if (permissionState === 'denied') {
+      throw new Error('הגישה למיקום חסומה. יש לאפשר הרשאה בהגדרות האתר בדפדפן.');
+    }
+
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const coords: [number, number] = [pos.coords.longitude, pos.coords.latitude];
+          setCurrentLocation(coords);
+          setLocationAccuracy(pos.coords.accuracy);
+          resolve(coords);
+        },
+        (error) => {
+          reject(new Error(resolveGeolocationError(error)));
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+      );
+    });
+  };
 
 
   const startWatchingLocation = (onUpdate: (loc: [number, number], accuracy: number) => void) => {
+    if (!navigator.geolocation) {
+      console.error('Geolocation is not supported by this browser.');
+      return -1;
+    }
+
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
         const coords: [number, number] = [position.coords.longitude, position.coords.latitude];
