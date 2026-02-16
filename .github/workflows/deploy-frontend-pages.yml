@@ -53,9 +53,36 @@ jobs:
         with:
           path: Delivri-front/dist
 
+  check-pages:
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.pages-state.outputs.enabled }}
+    steps:
+      - name: Check if GitHub Pages is enabled
+        id: pages-state
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              await github.rest.repos.getPages({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+              });
+              core.info("GitHub Pages is enabled.");
+              core.setOutput("enabled", "true");
+            } catch (error) {
+              if (error.status === 404) {
+                core.warning("GitHub Pages is not enabled. Deploy job will be skipped.");
+                core.setOutput("enabled", "false");
+              } else {
+                throw error;
+              }
+            }
+
   deploy:
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, check-pages]
+    if: needs.check-pages.outputs.enabled == 'true'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

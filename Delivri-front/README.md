@@ -57,3 +57,5 @@ Required GitHub repo configuration:
 - Optional:
   - Repository Variable: `VITE_API_URL`
   - Repository Secret: `VITE_ORS_API_KEY`
+
+If Pages is not enabled yet, the workflow skips deployment and prints a clear notice in Actions logs.

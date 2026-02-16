@@ -170,7 +170,7 @@ The workflow:
 
 1. Builds `Delivri-front`
 2. Uses a repository-based Vite `base` path (`/<repo-name>/`)
-3. Deploys static output to GitHub Pages
+3. Deploys static output to GitHub Pages when Pages is enabled
 
 Required configuration in GitHub:
 
@@ -178,6 +178,8 @@ Required configuration in GitHub:
 - Optional repo variables/secrets:
   - `VITE_API_URL` (Repository Variable)
   - `VITE_ORS_API_KEY` (Repository Secret)
+
+If Pages is not enabled yet, the workflow keeps the build artifact and skips only the deploy job.
 
 ### Backend deployment note
 
