@@ -197,7 +197,7 @@ const MapViewEnhanced = () => {
       const step = navigationSteps[currentStopIndex];
       if (step) speechSynthesis.speak(new SpeechSynthesisUtterance(step.instruction));
     }
-  }, [currentStopIndex, isNavigating]);
+  }, [currentStopIndex, isNavigating, navigationSteps]);
 
   useEffect(() => {
     if (!mapRef.current) return;
