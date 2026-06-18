@@ -150,8 +150,8 @@ const CityStreetSelector = ({ currentLocation, onSelect, disabled = false }: Pro
     <Paper
       variant="outlined"
       sx={{
-        p: { xs: 1.5, sm: 2 },
-        borderRadius: 2,
+        p: 1,
+        borderRadius: 1.5,
         bgcolor: 'background.paper',
         direction: 'rtl',
         width: '100%',
@@ -159,23 +159,23 @@ const CityStreetSelector = ({ currentLocation, onSelect, disabled = false }: Pro
         position: 'relative',
       }}>
       {sortingCities && (
-        <Box sx={{ position: 'absolute', top: 8, left: 8, zIndex: 1 }}>
-          <InlineLoader label="ממיין ערים..." size="xs" />
+        <Box sx={{ position: 'absolute', top: 4, left: 4, zIndex: 1 }}>
+          <InlineLoader label="ממיין..." size="xs" />
         </Box>
       )}
 
       {userCity && (
         <Chip
-          icon={<NearMeIcon />}
+          icon={<NearMeIcon sx={{ fontSize: '14px !important' }} />}
           label={`קרוב ל: ${userCity}`}
           size="small"
           color="primary"
           variant="outlined"
-          sx={{ mb: 1.5, maxWidth: '100%' }}
+          sx={{ mb: 1, maxWidth: '100%', height: 24, fontSize: '0.7rem' }}
         />
       )}
 
-      <Stack spacing={1.5} sx={{ width: '100%', minWidth: 0 }}>
+      <Stack spacing={1} sx={{ width: '100%', minWidth: 0 }}>
         <Autocomplete
           size="small"
           fullWidth
@@ -257,7 +257,10 @@ const CityStreetSelector = ({ currentLocation, onSelect, disabled = false }: Pro
             bgcolor: submitting ? 'primary.dark' : 'primary.main',
           }}>
           {submitting ? (
-            <InlineLoader label="מאתר כתובת..." size="xs" />
+            <>
+              <CircularProgress size={16} color="inherit" sx={{ mr: 1 }} />
+              מאתר כתובת...
+            </>
           ) : (
             'הוספת התחנה למסלול'
           )}

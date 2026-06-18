@@ -79,6 +79,15 @@ export const useDeliveryStops = () => {
     [deliveryStops, currentStopIndex],
   );
 
+  const handleUpdateStop = useCallback(
+    (stopId: string, updates: Partial<Pick<DeliveryStop, 'address' | 'coordinates' | 'note'>>) => {
+      setDeliveryStops((prev) =>
+        prev.map((s) => (s.id === stopId ? { ...s, ...updates } : s)),
+      );
+    },
+    [],
+  );
+
   return {
     deliveryStops,
     currentStopIndex,
@@ -91,5 +100,6 @@ export const useDeliveryStops = () => {
     handleConfirmPostpone,
     handleCancelPostpone,
     handleCompleteStop,
+    handleUpdateStop,
   };
 };

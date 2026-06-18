@@ -28,6 +28,8 @@ interface NavigationPanelShellProps {
     pendingStop: DeliveryStop | null;
     onConfirmPostpone: () => void;
     onCancelPostpone: () => void;
+    onUpdateStop: (stopId: string, updates: Partial<Pick<DeliveryStop, 'address' | 'coordinates' | 'note'>>) => void;
+    onFocusOnMap: (coords: [number, number]) => void;
   };
 }
 

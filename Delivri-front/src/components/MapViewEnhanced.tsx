@@ -39,6 +39,7 @@ const MapViewEnhanced = () => {
     handleConfirmPostpone,
     handleCancelPostpone,
     handleCompleteStop: completeStop,
+    handleUpdateStop,
   } = useDeliveryStops();
 
   const {
@@ -63,6 +64,11 @@ const MapViewEnhanced = () => {
   } = useRouteLoader({ mapRef, ready, currentLocation, deliveryStops, trackApiCall });
 
   useStopMarkers(mapRef, deliveryStops, currentStopIndex);
+
+  const focusOnStop = useCallback(
+    (coords: [number, number]) => mapRef.current?.flyTo({ center: coords, zoom: 16, essential: true }),
+    [mapRef],
+  );
 
   const mapFlyTo = useCallback(
     (center: [number, number]) => mapRef.current?.flyTo({ center, zoom: 14, essential: true }),
@@ -99,12 +105,10 @@ const MapViewEnhanced = () => {
     });
   };
 
-  const handleLocationConfirmWrapper = async () => {
-    try {
-      await handleLocationConfirm();
-    } catch {
-      setMapLoadError('אין הרשאה למיקום');
-    }
+  const handleLocationConfirmWrapper = async (): Promise<string | null> => {
+    const error = await handleLocationConfirm();
+    if (error) setMapLoadError(error);
+    return error;
   };
 
   const handleRetryRoute = () => {
@@ -135,6 +139,8 @@ const MapViewEnhanced = () => {
     pendingStop,
     onConfirmPostpone: handleConfirmPostpone,
     onCancelPostpone: handleCancelPostpone,
+    onUpdateStop: handleUpdateStop,
+    onFocusOnMap: focusOnStop,
   };
 
   return (

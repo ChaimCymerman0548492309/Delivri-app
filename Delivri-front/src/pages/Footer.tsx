@@ -1,4 +1,4 @@
-import { Box, LinearProgress, Paper, Typography, alpha } from '@mui/material';
+import { Box, LinearProgress, Paper, Tooltip, Typography, alpha } from '@mui/material';
 import { formatDistance, formatDuration } from '../utils/formatters';
 
 interface FooterProps {
@@ -10,15 +10,26 @@ interface FooterProps {
   isNavigating: boolean;
 }
 
-const Stat = ({ label, value }: { label: string; value: string }) => (
-  <Box sx={{ textAlign: 'center', minWidth: 64 }}>
-    <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.65rem' }}>
-      {label}
-    </Typography>
-    <Typography variant="body2" fontWeight={700} color="text.primary">
-      {value}
-    </Typography>
-  </Box>
+const Stat = ({ label, value, tooltip }: { label: string; value: string; tooltip: string }) => (
+  <Tooltip title={tooltip} arrow placement="top">
+    <Box
+      sx={{
+        textAlign: 'center',
+        minWidth: 56,
+        cursor: 'help',
+        px: 0.5,
+        borderRadius: 1,
+        transition: 'background-color 0.2s',
+        '&:hover': { bgcolor: (t) => alpha(t.palette.primary.main, 0.06) },
+      }}>
+      <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.65rem' }}>
+        {label}
+      </Typography>
+      <Typography variant="body2" fontWeight={700} color="text.primary" sx={{ fontSize: '0.8125rem' }}>
+        {value}
+      </Typography>
+    </Box>
+  </Tooltip>
 );
 
 const Footer = ({
@@ -48,7 +59,7 @@ const Footer = ({
         variant="determinate"
         value={progress}
         sx={{
-          height: 4,
+          height: 3,
           bgcolor: (t) => alpha(t.palette.primary.main, 0.12),
           '& .MuiLinearProgress-bar': {
             bgcolor: isNavigating ? 'success.main' : 'primary.main',
@@ -62,14 +73,30 @@ const Footer = ({
           display: 'flex',
           justifyContent: 'space-around',
           alignItems: 'center',
-          px: 2,
-          py: 1.25,
+          px: 1.5,
+          py: 0.75,
           bgcolor: 'background.paper',
         }}>
-        <Stat label="התקדמות" value={`${completedStops}/${totalStops}`} />
-        <Stat label="תחנה" value={totalStops > 0 ? `${currentStopIndex + 1}` : '—'} />
-        <Stat label="מרחק" value={totalDistance > 0 ? formatDistance(totalDistance) : '—'} />
-        <Stat label="זמן" value={totalDuration > 0 ? formatDuration(totalDuration) : '—'} />
+        <Stat
+          label="התקדמות"
+          value={`${completedStops}/${totalStops}`}
+          tooltip="מספר התחנות שסומנו כבוצעו, מתוך סך התחנות במסלול"
+        />
+        <Stat
+          label="תחנה"
+          value={totalStops > 0 ? `${currentStopIndex + 1}` : '—'}
+          tooltip="מספר התחנה הנוכחית בניווט (לפי סדר המסלול)"
+        />
+        <Stat
+          label="מרחק"
+          value={totalDistance > 0 ? formatDistance(totalDistance) : '—'}
+          tooltip="סך המרחק המשוער של המסלול המלא"
+        />
+        <Stat
+          label="זמן"
+          value={totalDuration > 0 ? formatDuration(totalDuration) : '—'}
+          tooltip="זמן הנסיעה המשוער למסלול המלא"
+        />
       </Box>
     </Paper>
   );

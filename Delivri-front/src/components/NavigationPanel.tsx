@@ -1,9 +1,7 @@
 // src/components/NavigationPanel.tsx
 import {
-  Add as AddIcon,
   Close as CloseIcon,
   Directions as DirectionsIcon,
-  LocationOn as LocationIcon,
   MyLocation as MyLocationIcon,
   PlayArrow as PlayArrowIcon,
   Stop as StopIcon,
@@ -13,8 +11,6 @@ import {
   Alert,
   Box,
   Button,
-  Card,
-  CardContent,
   CircularProgress,
   Dialog,
   DialogActions,
@@ -22,10 +18,10 @@ import {
   DialogTitle,
   IconButton,
   LinearProgress,
-  List,
   Paper,
   Tooltip,
   Typography,
+  alpha,
   useMediaQuery,
   type SxProps,
   type Theme,
@@ -36,7 +32,7 @@ import StatsAPI from '../services/StatsAPI';
 import type { DeliveryStop, NavigationStep } from '../types/types';
 import { logger } from '../utils/logger';
 import { useRouteOptimization } from '../utils/utils';
-import StopListItem from './Markers/StopListItem';
+import StopsTable from './Stops/StopsTable';
 import InlineLoader from './ui/InlineLoader';
 
 interface NavigationPanelProps {
@@ -61,6 +57,8 @@ interface NavigationPanelProps {
   pendingStop: DeliveryStop | null;
   onConfirmPostpone: () => void;
   onCancelPostpone: () => void;
+  onUpdateStop: (stopId: string, updates: Partial<Pick<DeliveryStop, 'address' | 'coordinates' | 'note'>>) => void;
+  onFocusOnMap: (coords: [number, number]) => void;
   onClosePanel: () => void;
   sx?: SxProps<Theme>;
 }
@@ -86,6 +84,8 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   pendingStop,
   onConfirmPostpone,
   onCancelPostpone,
+  onUpdateStop,
+  onFocusOnMap,
   onClosePanel,
   sx,
 }) => {
@@ -193,7 +193,9 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
       }}>
       <Box
         sx={{
-          p: 2,
+          px: 1.5,
+          py: 0.75,
+          minHeight: 40,
           background: 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)',
           color: 'white',
           display: 'flex',
@@ -201,15 +203,15 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
           justifyContent: 'space-between',
           flexShrink: 0,
         }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <DirectionsIcon sx={{ fontSize: isMobile ? 20 : 24 }} />
-          <Typography variant={isMobile ? 'subtitle1' : 'h6'} fontWeight="bold">
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+          <DirectionsIcon sx={{ fontSize: 18 }} />
+          <Typography variant="body2" fontWeight={700} lineHeight={1.2}>
             מנהל מסלול
           </Typography>
         </Box>
         <Tooltip title="סגירה">
-          <IconButton color="inherit" onClick={onClosePanel} size={isMobile ? 'small' : 'medium'}>
-            <CloseIcon sx={{ fontSize: isMobile ? 20 : 24 }} />
+          <IconButton color="inherit" onClick={onClosePanel} size="small" sx={{ p: 0.5 }}>
+            <CloseIcon sx={{ fontSize: 18 }} />
           </IconButton>
         </Tooltip>
       </Box>
@@ -218,16 +220,16 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
       {currentLocation && (
         <Box
           sx={{
-            px: isMobile ? 1.5 : 2,
-            py: 1,
+            px: 1.5,
+            py: 0.5,
             bgcolor: 'primary.dark',
             color: 'white',
             flexShrink: 0,
           }}>
-          <Typography variant="caption" sx={{ display: 'flex', alignItems: 'center' }}>
-            <MyLocationIcon sx={{ fontSize: 14, ml: 0.5 }} />
-            מיקום נוכחי זמין
-            {locationAccuracy && ` (דיוק: ~${Math.round(locationAccuracy)} מ׳)`}
+          <Typography variant="caption" sx={{ display: 'flex', alignItems: 'center', fontSize: '0.7rem' }}>
+            <MyLocationIcon sx={{ fontSize: 12, ml: 0.5 }} />
+            מיקום זמין
+            {locationAccuracy && ` · ~${Math.round(locationAccuracy)} מ׳`}
           </Typography>
         </Box>
       )}
@@ -249,43 +251,35 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
       {/* Controls */}
       <Box
         sx={{
-          p: { xs: 1.5, sm: 2 },
+          px: 1.5,
+          py: 1,
           borderBottom: 1,
           borderColor: 'divider',
           flexShrink: 0,
-          position: 'relative',
         }}>
-        {routeLoading && (
-          <Box sx={{ mb: 1 }}>
-            <InlineLoader label="מחשב מסלול..." size="xs" fullWidth />
-          </Box>
-        )}
+        {routeLoading && <InlineLoader label="מחשב מסלול..." size="xs" />}
         <Button
           fullWidth
           variant={isNavigating ? 'outlined' : 'contained'}
           color={isNavigating ? 'error' : 'primary'}
-          size={isMobile ? 'medium' : 'large'}
+          size="small"
           startIcon={
             isNavigating ? (
-              <StopIcon />
+              <StopIcon fontSize="small" />
             ) : routeLoading ? (
-              <CircularProgress size={20} color="inherit" />
+              <CircularProgress size={14} color="inherit" />
             ) : (
-              <PlayArrowIcon />
+              <PlayArrowIcon fontSize="small" />
             )
           }
           onClick={isNavigating ? handleStop : handleStart}
           disabled={routeLoading || !ready || (!isNavigating && (!currentLocation || deliveryStops.length === 0))}
-          sx={{
-            py: isMobile ? 1 : 1.2,
-            mb: 1,
-            fontSize: isMobile ? '0.875rem' : '1rem',
-          }}>
-          {isNavigating ? 'עצור ניווט' : `התחל (${deliveryStops.length})`}
+          sx={{ py: 0.75, fontSize: '0.8125rem', fontWeight: 600 }}>
+          {isNavigating ? 'עצור' : `התחל ניווט · ${deliveryStops.length}`}
         </Button>
 
         {routeError && (
-          <Alert severity="error" sx={{ textAlign: 'right', fontSize: isMobile ? '0.75rem' : '0.875rem' }}>
+          <Alert severity="error" sx={{ mt: 0.75, py: 0, fontSize: '0.75rem', '& .MuiAlert-message': { py: 0.5 } }}>
             {routeError}
           </Alert>
         )}
@@ -293,77 +287,48 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         {isMaxStopsReached && (
           <Alert
             severity="warning"
-            icon={<WarningIcon />}
-            sx={{
-              textAlign: 'right',
-              fontSize: isMobile ? '0.75rem' : '0.875rem',
-              mt: 1,
-            }}>
-            הגעת למקסימום {MAX_STOPS} תחנות בגרסה זו
+            icon={<WarningIcon fontSize="small" />}
+            sx={{ mt: 0.75, py: 0, fontSize: '0.75rem', '& .MuiAlert-message': { py: 0.5 } }}>
+            מקסימום {MAX_STOPS} תחנות
           </Alert>
         )}
 
         {isNavigating && (
-          <Card
+          <Box
             sx={{
-              bgcolor: 'primary.light',
-              color: 'white',
-              mt: 1,
-              '& .MuiCardContent-root': { py: isMobile ? 1.5 : 2 },
+              display: 'flex',
+              justifyContent: 'space-between',
+              gap: 1,
+              mt: 0.75,
+              px: 0.5,
+              py: 0.5,
+              borderRadius: 1,
+              bgcolor: (t) => alpha(t.palette.primary.main, 0.08),
             }}>
-            <CardContent>
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  gap: isMobile ? 1 : 2,
-                }}>
-                <Box sx={{ textAlign: 'center', flex: 1 }}>
-                  <Typography variant={isMobile ? 'caption' : 'body2'}>מרחק</Typography>
-                  <Typography variant={isMobile ? 'body2' : 'h6'} fontWeight="bold">
-                    {(totalDistance / 1000).toFixed(1)} ק״מ
-                  </Typography>
-                </Box>
-                <Box sx={{ textAlign: 'center', flex: 1 }}>
-                  <Typography variant={isMobile ? 'caption' : 'body2'}>משך</Typography>
-                  <Typography variant={isMobile ? 'body2' : 'h6'} fontWeight="bold">
-                    {formatTime(totalDuration)}
-                  </Typography>
-                </Box>
-                <Box sx={{ textAlign: 'center', flex: 1 }}>
-                  <Typography variant={isMobile ? 'caption' : 'body2'}>תחנה</Typography>
-                  <Typography variant={isMobile ? 'body2' : 'h6'} fontWeight="bold">
-                    {currentStopIndex + 1}/{deliveryStops.length}
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
+            <Typography variant="caption" color="text.secondary">
+              {(totalDistance / 1000).toFixed(1)} ק״מ
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {formatTime(totalDuration)}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {currentStopIndex + 1}/{deliveryStops.length}
+            </Typography>
+          </Box>
         )}
       </Box>
 
       {/* Add Stop */}
       <Box
         sx={{
-          p: { xs: 1.5, sm: 2 },
+          px: 1.5,
+          py: 1,
           borderBottom: 1,
           borderColor: 'divider',
           flexShrink: 0,
           minWidth: 0,
           width: '100%',
         }}>
-        <Typography
-          variant="subtitle2"
-          sx={{
-            mb: 1.5,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            fontSize: { xs: '0.875rem', sm: '1rem' },
-          }}>
-          <AddIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
-          הוספת תחנה {isMaxStopsReached && `(מקסימום ${MAX_STOPS})`}
-        </Typography>
         <CityStreetSelector
           currentLocation={currentLocation}
           disabled={isMaxStopsReached}
@@ -386,38 +351,33 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         sx={{
           flex: 1,
           overflowY: 'auto',
-          p: isMobile ? 1.5 : 2,
-          minHeight: 0, // Important for flexbox scrolling
+          px: 1.5,
+          py: 1,
+          minHeight: 0,
         }}>
         <Typography
-          variant="subtitle2"
+          variant="caption"
+          color="text.secondary"
           sx={{
-            mb: 2,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            fontSize: isMobile ? '0.875rem' : '1rem',
+            display: 'block',
+            mb: 1,
+            fontSize: '0.68rem',
+            lineHeight: 1.3,
+            opacity: 0.85,
           }}>
-          <LocationIcon sx={{ fontSize: isMobile ? 18 : 20 }} />
-          בגרסה הנוכחית ניתן להוסיף עד 10 תחנות  ({deliveryStops.length}/{MAX_STOPS})
+          עד {MAX_STOPS} תחנות · {deliveryStops.length}/{MAX_STOPS}
         </Typography>
 
-        <List sx={{ py: 0 }}>
-          {deliveryStops.map((stop, index) => (
-            <StopListItem
-              key={stop.id}
-              stop={stop}
-              index={index}
-              isCurrent={index === currentStopIndex}
-              isNavigating={isNavigating}
-              onComplete={() => handleCompleteStop(stop.id)}
-              onRemove={() => handleRemoveStop(stop.id)}
-              onPostpone={() => handlePostponeStop(stop.id)}
-              currentLocation={currentLocation}
-              // compact={isMobile}
-            />
-          ))}
-        </List>
+        <StopsTable
+          stops={deliveryStops}
+          currentStopIndex={currentStopIndex}
+          isNavigating={isNavigating}
+          onComplete={handleCompleteStop}
+          onRemove={handleRemoveStop}
+          onPostpone={handlePostponeStop}
+          onUpdate={onUpdateStop}
+          onFocusOnMap={onFocusOnMap}
+        />
       </Box>
 
       {/* Postpone Dialog */}

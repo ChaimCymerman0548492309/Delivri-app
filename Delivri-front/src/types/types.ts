@@ -9,6 +9,7 @@ export interface DeliveryStop {
   estimatedTime?: number;
   distanceFromPrevious?: number;
   postponed?: boolean;
+  note?: string;
 }
 
 export interface NavigationStep {

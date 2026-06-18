@@ -9,14 +9,15 @@ export const useLocationTracking = (mapRef: React.RefObject<maplibregl.Map | nul
   const [locationPopupOpen, setLocationPopupOpen] = useState(true);
   const { locationAccuracy, getCurrentLocation } = useGeolocation();
 
-  const handleLocationConfirm = useCallback(async () => {
+  const handleLocationConfirm = useCallback(async (): Promise<string | null> => {
     try {
       const pos = await getCurrentLocation();
       setCurrentLocation(pos);
       setTracking(true);
       setLocationPopupOpen(false);
+      return null;
     } catch {
-      throw new Error('אין הרשאה למיקום');
+      return 'אין הרשאה למיקום. אנא אשר גישה בדפדפן.';
     }
   }, [getCurrentLocation]);
 
