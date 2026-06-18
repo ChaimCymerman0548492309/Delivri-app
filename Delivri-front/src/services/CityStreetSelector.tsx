@@ -4,11 +4,11 @@ import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   Paper,
   Stack,
   TextField,
   Typography,
-  alpha,
 } from '@mui/material';
 import { NearMe as NearMeIcon } from '@mui/icons-material';
 import InlineLoader from '../components/ui/InlineLoader';
@@ -189,23 +189,22 @@ const CityStreetSelector = ({ currentLocation, onSelect, disabled = false }: Pro
               {...params}
               label="עיר"
               placeholder="חפש עיר..."
-              slotProps={{
-                input: {
-                  ...params.InputProps,
-                  endAdornment: (
-                    <>
-                      {sortingCities && <InlineLoader size="xs" />}
-                      {params.InputProps.endAdornment}
-                    </>
-                  ),
-                },
+              InputProps={{
+                ...params.InputProps,
+                endAdornment: (
+                  <>
+                    {sortingCities && <CircularProgress color="inherit" size={16} sx={{ mr: 1 }} />}
+                    {params.InputProps.endAdornment}
+                  </>
+                ),
               }}
             />
           )}
           renderOption={(props, option) => {
+            const { key, ...rest } = props;
             const isNearby = nearbyCities.has(option);
             return (
-              <Box component="li" {...props} key={option}>
+              <Box component="li" key={key} {...rest}>
                 <Typography variant="body2" sx={{ fontWeight: isNearby ? 600 : 400 }}>
                   {option}
                 </Typography>

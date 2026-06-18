@@ -1,6 +1,6 @@
 import { API } from '../config/api';
 import { getCityCenter } from '../data/israeliCityCenters';
-import { citiesMatch, haversineKm, normalizeCityName } from '../utils/geoUtils';
+import { citiesMatch, haversineKm } from '../utils/geoUtils';
 
 type Coordinates = [number, number];
 
@@ -88,16 +88,14 @@ export const getCityGroupLabel = (city: string, nearbyCities: Set<string>): stri
   return 'כל הערים';
 };
 
-export const findCityCenterForMatch = (city: string, userLocation: Coordinates | null): boolean => {
-  if (!userLocation) return false;
-  const center = getCityCenter(city);
-  if (!center) return false;
-  return haversineKm(userLocation, center) <= NEARBY_RADIUS_KM;
-};
-
 /** בדיקה אם מיקום המשתמש השתנה משמעותית */
 export const shouldRefreshCitySort = (newLocation: Coordinates | null): boolean => {
   if (!newLocation) return false;
   if (!cachedUserCityCoords) return true;
-  return haversineKm(cachedUserCityCoords, newLocation) > 5;
+  if (haversineKm(cachedUserCityCoords, newLocation) > 5) {
+    cachedUserCity = null;
+    cachedUserCityCoords = null;
+    return true;
+  }
+  return false;
 };

@@ -37,7 +37,15 @@ const NavigationPanelShell = ({
   onClosePanel,
   panelProps,
 }: NavigationPanelShellProps) => {
-  const isTablet = useMediaQuery('(max-width:1024px)');
+  const isCompact = useMediaQuery('(max-width:1024px)');
+
+  const panelSx = {
+    width: '100%',
+    maxWidth: '100%',
+    minWidth: { xs: 0, sm: 280 },
+    flexShrink: 0,
+    display: mobileOpen ? 'flex' : 'none',
+  };
 
   if (isMobile) {
     return (
@@ -47,7 +55,13 @@ const NavigationPanelShell = ({
         open={mobileOpen}
         onClose={onClosePanel}
         ModalProps={{ keepMounted: true }}
-        sx={{ '& .MuiDrawer-paper': { width: '100%', maxWidth: 420 } }}>
+        sx={{
+          '& .MuiDrawer-paper': {
+            width: '100%',
+            maxWidth: 440,
+            minWidth: 0,
+          },
+        }}>
         <NavigationPanel {...panelProps} onClosePanel={onClosePanel} />
       </Drawer>
     );
@@ -57,7 +71,10 @@ const NavigationPanelShell = ({
     <NavigationPanel
       {...panelProps}
       onClosePanel={onClosePanel}
-      sx={{ width: isTablet ? 360 : 400, flexShrink: 0, display: mobileOpen ? 'flex' : 'none' }}
+      sx={{
+        ...panelSx,
+        width: isCompact ? 'min(380px, 36vw)' : 'min(420px, 32vw)',
+      }}
     />
   );
 };

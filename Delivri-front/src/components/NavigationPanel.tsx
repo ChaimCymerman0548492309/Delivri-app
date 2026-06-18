@@ -37,6 +37,7 @@ import type { DeliveryStop, NavigationStep } from '../types/types';
 import { logger } from '../utils/logger';
 import { useRouteOptimization } from '../utils/utils';
 import StopListItem from './Markers/StopListItem';
+import InlineLoader from './ui/InlineLoader';
 
 interface NavigationPanelProps {
   isNavigating: boolean;
@@ -89,7 +90,6 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   sx,
 }) => {
   const isMobile = useMediaQuery('(max-width:768px)');
-  const isTablet = useMediaQuery('(max-width:1024px)');
   const { geocodeAddress } = useRouteOptimization();
 
   const MAX_STOPS = 10;
@@ -179,16 +179,16 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     <Paper
       elevation={isMobile ? 0 : 2}
       sx={{
-        width: isMobile ? '100vw' : isTablet ? 360 : 400,
+        width: '100%',
         height: isMobile ? '100vh' : '100%',
         maxHeight: isMobile ? '100vh' : 'none',
         display: 'flex',
         flexDirection: 'column',
-        borderRadius: isMobile ? 0 : 0,
         overflow: 'hidden',
         direction: 'rtl',
         borderRight: (t) => `1px solid ${t.palette.divider}`,
         bgcolor: 'background.paper',
+        minWidth: 0,
         ...sx,
       }}>
       <Box
@@ -249,11 +249,17 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
       {/* Controls */}
       <Box
         sx={{
-          p: isMobile ? 1.5 : 2,
+          p: { xs: 1.5, sm: 2 },
           borderBottom: 1,
           borderColor: 'divider',
           flexShrink: 0,
+          position: 'relative',
         }}>
+        {routeLoading && (
+          <Box sx={{ mb: 1 }}>
+            <InlineLoader label="מחשב מסלול..." size="xs" fullWidth />
+          </Box>
+        )}
         <Button
           fullWidth
           variant={isNavigating ? 'outlined' : 'contained'}
@@ -339,24 +345,28 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
       {/* Add Stop */}
       <Box
         sx={{
-          p: isMobile ? 1.5 : 2,
+          p: { xs: 1.5, sm: 2 },
           borderBottom: 1,
           borderColor: 'divider',
           flexShrink: 0,
+          minWidth: 0,
+          width: '100%',
         }}>
         <Typography
           variant="subtitle2"
           sx={{
-            mb: 2,
+            mb: 1.5,
             display: 'flex',
             alignItems: 'center',
             gap: 1,
-            fontSize: isMobile ? '0.875rem' : '1rem',
+            fontSize: { xs: '0.875rem', sm: '1rem' },
           }}>
-          <AddIcon sx={{ fontSize: isMobile ? 18 : 20 }} />
+          <AddIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
           הוספת תחנה {isMaxStopsReached && `(מקסימום ${MAX_STOPS})`}
         </Typography>
         <CityStreetSelector
+          currentLocation={currentLocation}
+          disabled={isMaxStopsReached}
           onSelect={async (city, street, houseNumber) => {
             if (isMaxStopsReached) {
               alert(`בגרסה הנוכחית ניתן להוסיף עד ${MAX_STOPS} תחנות בלבד`);
@@ -365,10 +375,9 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
 
             const fullAddress = `${street} ${houseNumber || ''} ${city}`.trim();
             const result = await geocodeAddress(fullAddress);
-            if (result) handleAddStop(fullAddress, result, city);
+            if (result) await handleAddStop(fullAddress, result, city);
             else alert('לא הצלחנו לאתר את הכתובת שבחרת');
           }}
-          // disabled={isMaxStopsReached}
         />
       </Box>
 

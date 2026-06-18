@@ -1,5 +1,6 @@
 import { Alert, Box, Button } from '@mui/material';
 import LoadingSpinner from '../../pages/LoadingSpinner';
+import InlineLoader from '../ui/InlineLoader';
 import ApiPerformance from '../../pages/ApiPerformance';
 import InstructionsOverlay from '../InstructionsOverlay';
 
@@ -79,6 +80,23 @@ const MapCanvas = ({
     {showApiPerformance && ready && (
       <Box sx={{ position: 'absolute', top: 16, left: 16, width: 280, zIndex: 1000, opacity: 0.92 }}>
         <ApiPerformance timings={timings} loading={apiLoading} />
+      </Box>
+    )}
+
+    {apiLoading && ready && (
+      <Box
+        sx={{
+          position: 'absolute',
+          bottom: 16,
+          left: 16,
+          zIndex: 1000,
+          bgcolor: 'background.paper',
+          borderRadius: 2,
+          px: 1.5,
+          py: 0.5,
+          boxShadow: 2,
+        }}>
+        <InlineLoader label="טוען נתונים..." size="xs" />
       </Box>
     )}
   </Box>

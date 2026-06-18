@@ -39,7 +39,6 @@ export const ISRAELI_CITY_CENTERS: Record<string, [number, number]> = {
   'יבנה': [34.7361, 31.8781],
   'גבעתיים': [34.8122, 32.0722],
   'רעננה': [34.8706, 32.1848],
-  'כרמiel': [35.2969, 32.9192],
 };
 
 export const getCityCenter = (cityName: string): [number, number] | null => {
