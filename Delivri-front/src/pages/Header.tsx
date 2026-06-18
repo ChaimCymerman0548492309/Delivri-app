@@ -1,65 +1,80 @@
-import { Analytics as AnalyticsIcon, Menu as MenuIcon, MyLocation as MyLocationIcon } from '@mui/icons-material';
-import { AppBar, Badge, Box, IconButton, Toolbar, Typography } from '@mui/material';
-
+import {
+  Analytics as AnalyticsIcon,
+  BarChart as BarChartIcon,
+  LocalShipping as TruckIcon,
+  Menu as MenuIcon,
+  MenuOpen as MenuOpenIcon,
+  MyLocation as MyLocationIcon,
+} from '@mui/icons-material';
+import { AppBar, Badge, Box, Chip, IconButton, Toolbar, Tooltip, Typography } from '@mui/material';
 
 interface HeaderProps {
   onMenuToggle: () => void;
   onLocationFocus: () => void;
-  onShowAnalytics: () => void;
-  setOpenAnalyticsDashboard: () => void;
+  onShowLocalAnalytics: () => void;
+  onShowServerAnalytics: () => void;
   deliveryStopsCount: number;
   isNavigating: boolean;
+  panelOpen: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({
+const Header = ({
   onMenuToggle,
   onLocationFocus,
-  onShowAnalytics,
-  setOpenAnalyticsDashboard,
+  onShowLocalAnalytics,
+  onShowServerAnalytics,
   deliveryStopsCount,
   isNavigating,
-}) => {
-  // const isMobile = useMediaQuery('(max-width:768px)');
-  return (
-    <AppBar position="static" elevation={2}>
-      <Toolbar>
-        <IconButton color="inherit" aria-label="open drawer" edge="start" onClick={onMenuToggle} sx={{ mr: 2 }}>
-          <Badge badgeContent={deliveryStopsCount} color="secondary">
-            <MenuIcon />
+  panelOpen,
+}: HeaderProps) => (
+  <AppBar position="static" elevation={0} sx={{ borderBottom: '1px solid rgba(255,255,255,0.15)' }}>
+    <Toolbar sx={{ gap: 1, minHeight: { xs: 56, sm: 64 } }}>
+      <Tooltip title={panelOpen ? 'הסתר פאנל' : 'הצג פאנל מסלול'}>
+        <IconButton color="inherit" onClick={onMenuToggle} edge="start">
+          <Badge badgeContent={deliveryStopsCount} color="secondary" max={99}>
+            {panelOpen ? <MenuOpenIcon /> : <MenuIcon />}
           </Badge>
         </IconButton>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          🚚 ניהול משלוחים
-          {isNavigating && (
-            <Typography
-              component="span"
-              variant="caption"
-              sx={{
-                ml: 1,
-                bgcolor: 'rgba(255,255,255,0.2)',
-                px: 1,
-                py: 0.5,
-                borderRadius: 1,
-              }}>
-              במצב ניווט
-            </Typography>
-          )}
-        </Typography>{' '}
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <IconButton color="inherit" onClick={onShowAnalytics}>
-            <AnalyticsIcon />
-          </IconButton>
-          <IconButton color="inherit" onClick={setOpenAnalyticsDashboard}>
-            <AnalyticsIcon />
-          </IconButton>
+      </Tooltip>
 
+      <TruckIcon sx={{ display: { xs: 'none', sm: 'block' }, opacity: 0.9 }} />
+
+      <Box sx={{ flexGrow: 1 }}>
+        <Typography variant="h6" component="div" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+          Delivri
+        </Typography>
+        <Typography variant="caption" sx={{ opacity: 0.85, display: { xs: 'none', sm: 'block' } }}>
+          ניהול מסלולי משלוח
+        </Typography>
+      </Box>
+
+      {isNavigating && (
+        <Chip
+          label="בניווט"
+          size="small"
+          sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white', fontWeight: 600, animation: 'pulse 2s infinite' }}
+        />
+      )}
+
+      <Box sx={{ display: 'flex', gap: 0.5 }}>
+        <Tooltip title="סטטיסטיקות מקומיות">
+          <IconButton color="inherit" onClick={onShowLocalAnalytics}>
+            <AnalyticsIcon />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="דשבורד שרת">
+          <IconButton color="inherit" onClick={onShowServerAnalytics}>
+            <BarChartIcon />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="מרכז על המיקום שלי">
           <IconButton color="inherit" onClick={onLocationFocus}>
             <MyLocationIcon />
           </IconButton>
-        </Box>
-      </Toolbar>
-    </AppBar>
-  );
-};
+        </Tooltip>
+      </Box>
+    </Toolbar>
+  </AppBar>
+);
 
 export default Header;

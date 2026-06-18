@@ -27,7 +27,8 @@ import {
   Tooltip,
   Typography,
   useMediaQuery,
-  useTheme,
+  type SxProps,
+  type Theme,
 } from '@mui/material';
 import { useMemo } from 'react';
 import CityStreetSelector from '../services/CityStreetSelector';
@@ -59,6 +60,7 @@ interface NavigationPanelProps {
   onConfirmPostpone: () => void;
   onCancelPostpone: () => void;
   onClosePanel: () => void;
+  sx?: SxProps<Theme>;
 }
 
 const NavigationPanel: React.FC<NavigationPanelProps> = ({
@@ -83,8 +85,8 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   onConfirmPostpone,
   onCancelPostpone,
   onClosePanel,
+  sx,
 }) => {
-  const theme = useTheme();
   const isMobile = useMediaQuery('(max-width:768px)');
   const isTablet = useMediaQuery('(max-width:1024px)');
   const { geocodeAddress } = useRouteOptimization();
@@ -175,26 +177,24 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
 
   return (
     <Paper
-      elevation={isMobile ? 0 : 3}
+      elevation={isMobile ? 0 : 2}
       sx={{
-        width: isMobile ? '100vw' : isTablet ? 380 : 420,
+        width: isMobile ? '100vw' : isTablet ? 360 : 400,
         height: isMobile ? '100vh' : '100%',
         maxHeight: isMobile ? '100vh' : 'none',
         display: 'flex',
         flexDirection: 'column',
-        borderRadius: isMobile ? 0 : 2,
+        borderRadius: isMobile ? 0 : 0,
         overflow: 'hidden',
         direction: 'rtl',
-        position: isMobile ? 'fixed' : 'relative',
-        top: 0,
-        left: 0,
-        zIndex: theme.zIndex.drawer,
+        borderRight: (t) => `1px solid ${t.palette.divider}`,
+        bgcolor: 'background.paper',
+        ...sx,
       }}>
-      {/* Header */}
       <Box
         sx={{
-          p: isMobile ? 1.5 : 2,
-          bgcolor: 'primary.main',
+          p: 2,
+          background: 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)',
           color: 'white',
           display: 'flex',
           alignItems: 'center',

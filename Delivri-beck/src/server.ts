@@ -229,8 +229,6 @@ app.get('/api/stats/route-metrics', async (_req, res) => {
   WHERE event_type IN ('startNavigation', 'sessionEnd');
 `);
     res.json(result.rows?.[0] ?? { total_distance_km: 0, avg_distance_km: 0, avg_duration_min: 0 });
-
-    res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: 'Route metrics query failed' });
   }

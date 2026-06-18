@@ -1,30 +1,18 @@
-import { ThemeProvider, createTheme } from '@mui/material';
-import React from 'react';
-import ReactDOM from 'react-dom/client';
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { CssBaseline, ThemeProvider } from '@mui/material';
 import MapViewEnhanced from './components/MapViewEnhanced';
-import './index.css';
 import AppErrorBoundary from './pages/ErrorBoundary';
+import { appTheme } from './theme/appTheme';
+import './App.css';
 
-const theme = createTheme({
-  direction: 'rtl',
-  palette: {
-    primary: { main: '#1976d2' },
-    secondary: { main: '#dc004e' },
-    background: {
-      default: '#f5f5f5',
-    },
-  },
-  typography: {
-    fontFamily: '"Rubik", "Helvetica", "Arial", sans-serif',
-  },
-});
-
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <ThemeProvider theme={theme}>
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <ThemeProvider theme={appTheme}>
+      <CssBaseline />
       <AppErrorBoundary>
         <MapViewEnhanced />
       </AppErrorBoundary>
     </ThemeProvider>
-  </React.StrictMode>,
+  </StrictMode>,
 );

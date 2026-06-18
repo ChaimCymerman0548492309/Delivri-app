@@ -1,4 +1,5 @@
-import { Box, LinearProgress, Typography, Paper } from '@mui/material';
+import { Box, LinearProgress, Paper, Typography, alpha } from '@mui/material';
+import { formatDistance, formatDuration } from '../utils/formatters';
 
 interface FooterProps {
   totalStops: number;
@@ -9,96 +10,66 @@ interface FooterProps {
   isNavigating: boolean;
 }
 
-const Footer: React.FC<FooterProps> = ({
+const Stat = ({ label, value }: { label: string; value: string }) => (
+  <Box sx={{ textAlign: 'center', minWidth: 64 }}>
+    <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.65rem' }}>
+      {label}
+    </Typography>
+    <Typography variant="body2" fontWeight={700} color="text.primary">
+      {value}
+    </Typography>
+  </Box>
+);
+
+const Footer = ({
   totalStops,
   completedStops,
   currentStopIndex,
   totalDistance,
   totalDuration,
   isNavigating,
-}) => {
+}: FooterProps) => {
   const progress = totalStops > 0 ? (completedStops / totalStops) * 100 : 0;
-
-  const formatTime = (seconds: number) => {
-    const minutes = Math.round(seconds / 60);
-    if (minutes < 60) return `${minutes} דקות`;
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    return `${hours} שעות ${remainingMinutes} דקות`;
-  };
 
   return (
     <Paper
-      elevation={3}
+      elevation={8}
       sx={{
         position: 'fixed',
         bottom: 0,
         left: 0,
         right: 0,
-        zIndex: 1000,
-        borderRadius: 0,
+        zIndex: 1100,
+        borderRadius: '16px 16px 0 0',
+        overflow: 'hidden',
+        borderTop: (t) => `1px solid ${alpha(t.palette.primary.main, 0.15)}`,
       }}>
-      {/* Progress Bar */}
       <LinearProgress
         variant="determinate"
         value={progress}
         sx={{
-          height: 6,
+          height: 4,
+          bgcolor: (t) => alpha(t.palette.primary.main, 0.12),
           '& .MuiLinearProgress-bar': {
-            backgroundColor: isNavigating ? '#4caf50' : '#1976d2',
+            bgcolor: isNavigating ? 'success.main' : 'primary.main',
+            transition: 'transform 0.4s ease',
           },
         }}
       />
 
-      {/* Stats Bar */}
       <Box
         sx={{
           display: 'flex',
-          justifyContent: 'space-between',
+          justifyContent: 'space-around',
           alignItems: 'center',
           px: 2,
-          py: 1,
+          py: 1.25,
           bgcolor: 'background.paper',
         }}>
-        <Box sx={{ display: 'flex', gap: 3 }}>
-          <Box sx={{ textAlign: 'center' }}>
-            <Typography variant="caption" color="text.secondary" display="block">
-              התקדמות
-            </Typography>
-            <Typography variant="body2" fontWeight="bold">
-              {completedStops}/{totalStops}
-            </Typography>
-          </Box>
-
-          <Box sx={{ textAlign: 'center' }}>
-            <Typography variant="caption" color="text.secondary" display="block">
-              תחנה נוכחית
-            </Typography>
-            <Typography variant="body2" fontWeight="bold">
-              {currentStopIndex + 1}
-            </Typography>
-          </Box>
-        </Box>
-
-        <Box sx={{ display: 'flex', gap: 3 }}>
-          <Box sx={{ textAlign: 'center' }}>
-            <Typography variant="caption" color="text.secondary" display="block">
-              מרחק
-            </Typography>
-            <Typography variant="body2" fontWeight="bold">
-              {(totalDistance / 1000).toFixed(1)} ק"מ
-            </Typography>
-          </Box>
-
-          <Box sx={{ textAlign: 'center' }}>
-            <Typography variant="caption" color="text.secondary" display="block">
-              זמן
-            </Typography>
-            <Typography variant="body2" fontWeight="bold">
-              {formatTime(totalDuration)}
-            </Typography>
-          </Box>
-        </Box>
+        <Stat label="התקדמות" value={`${completedStops}/${totalStops}`} />
+        <Stat label="תחנה" value={totalStops > 0 ? `${currentStopIndex + 1}` : '—'} />
+        <Stat label="מרחק" value={totalDistance > 0 ? formatDistance(totalDistance) : '—'} />
+        <Stat label="זמן" value={totalDuration > 0 ? formatDuration(totalDuration) : '—'} />
       </Box>
     </Paper>
   );

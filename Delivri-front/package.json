@@ -13,8 +13,8 @@
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.0",
     "@mui/icons-material": "^7.3.4",
+    "@mui/material": "^7.3.4",
     "maplibre-gl": "^5.10.0",
-    "mui": "^0.0.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "recharts": "^3.3.0"

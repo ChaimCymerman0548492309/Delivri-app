@@ -1,0 +1,87 @@
+import { Alert, Box, Button } from '@mui/material';
+import LoadingSpinner from '../../pages/LoadingSpinner';
+import ApiPerformance from '../../pages/ApiPerformance';
+import InstructionsOverlay from '../InstructionsOverlay';
+
+interface MapCanvasProps {
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  ready: boolean;
+  mapLoadError: string | null;
+  isNavigating: boolean;
+  navigationSteps: { instruction: string; distance: number; duration: number; type: string }[];
+  currentStepIndex: number;
+  timings: Record<string, number>;
+  apiLoading: boolean;
+  showApiPerformance: boolean;
+}
+
+const MapCanvas = ({
+  containerRef,
+  ready,
+  mapLoadError,
+  isNavigating,
+  navigationSteps,
+  currentStepIndex,
+  timings,
+  apiLoading,
+  showApiPerformance,
+}: MapCanvasProps) => (
+  <Box sx={{ flex: 1, position: 'relative', minHeight: 0 }}>
+    <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+
+    {!ready && !mapLoadError && (
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'background.default',
+          zIndex: 999,
+        }}>
+        <LoadingSpinner message="טוען מפה..." />
+      </Box>
+    )}
+
+    {mapLoadError && (
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'background.default',
+          zIndex: 999,
+          p: 3,
+        }}>
+        <Alert
+          severity="error"
+          action={
+            <Button color="inherit" size="small" onClick={() => window.location.reload()}>
+              רענן
+            </Button>
+          }>
+          {mapLoadError}
+        </Alert>
+      </Box>
+    )}
+
+    {ready && (
+      <InstructionsOverlay
+        steps={navigationSteps}
+        currentStepIndex={currentStepIndex}
+        isNavigating={isNavigating}
+      />
+    )}
+
+    {showApiPerformance && ready && (
+      <Box sx={{ position: 'absolute', top: 16, left: 16, width: 280, zIndex: 1000, opacity: 0.92 }}>
+        <ApiPerformance timings={timings} loading={apiLoading} />
+      </Box>
+    )}
+  </Box>
+);
+
+export default MapCanvas;

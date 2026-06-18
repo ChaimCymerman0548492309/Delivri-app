@@ -1,5 +1,6 @@
-import { Card, CardContent, Typography, Box, Paper, Chip } from '@mui/material';
-import { Navigation as NavigationIcon } from '@mui/icons-material';
+import { Navigation as NavigationIcon, TurnRight as TurnIcon } from '@mui/icons-material';
+import { Box, Card, CardContent, Chip, Paper, Typography, alpha } from '@mui/material';
+import { formatDistance, formatDuration } from '../utils/formatters';
 
 interface NavigationStep {
   instruction: string;
@@ -14,69 +15,67 @@ interface InstructionsOverlayProps {
   isNavigating: boolean;
 }
 
-const InstructionsOverlay: React.FC<InstructionsOverlayProps> = ({ steps, currentStepIndex, isNavigating }) => {
+const InstructionsOverlay = ({ steps, currentStepIndex, isNavigating }: InstructionsOverlayProps) => {
   if (!isNavigating || steps.length === 0) return null;
 
   const currentStep = steps[currentStepIndex] || steps[0];
   const nextSteps = steps.slice(currentStepIndex + 1, currentStepIndex + 3);
 
-  const getStepIcon = (type: string) => {
-    switch (type) {
-      case 'depart':
-        return '🚀';
-      case 'arrive':
-        return '🎯';
-      case 'turn':
-        return '↪️';
-      case 'continue':
-        return '➡️';
-      default:
-        return '📌';
-    }
-  };
-
   return (
     <Box
       sx={{
         position: 'absolute',
-        top: 80,
-        left: 16,
-        right: 16,
+        top: 16,
+        left: '50%',
+        transform: 'translateX(-50%)',
         zIndex: 1000,
-        maxWidth: 400,
-        margin: '0 auto',
+        width: { xs: 'calc(100% - 32px)', sm: 380 },
+        maxWidth: 420,
       }}>
-      {/* Current Instruction */}
-      <Card elevation={4} sx={{ mb: 1 }}>
-        <CardContent sx={{ pb: 1 }}>
+      <Card
+        elevation={6}
+        sx={{
+          mb: 1,
+          borderRadius: 3,
+          border: (t) => `1px solid ${alpha(t.palette.primary.main, 0.2)}`,
+          bgcolor: (t) => alpha(t.palette.background.paper, 0.95),
+          backdropFilter: 'blur(8px)',
+        }}>
+        <CardContent sx={{ pb: '12px !important' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-            <NavigationIcon color="primary" />
-            <Typography variant="h6" component="div" fontWeight="bold">
+            <NavigationIcon color="primary" fontSize="small" />
+            <Typography variant="subtitle2" fontWeight={700}>
               הוראה נוכחית
             </Typography>
-            <Chip label={`${currentStepIndex + 1}/${steps.length}`} size="small" color="primary" />
+            <Chip label={`${currentStepIndex + 1}/${steps.length}`} size="small" color="primary" variant="outlined" />
           </Box>
 
-          <Typography variant="body1" sx={{ mb: 1, fontSize: '1.1rem' }}>
-            {getStepIcon(currentStep.type)} {currentStep.instruction}
+          <Typography variant="body1" sx={{ mb: 1.5, lineHeight: 1.5, fontWeight: 500 }}>
+            {currentStep.instruction}
           </Typography>
 
           <Box sx={{ display: 'flex', gap: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              📏 {(currentStep.distance / 1000).toFixed(1)} ק"מ
+            <Typography variant="caption" color="text.secondary">
+              {formatDistance(currentStep.distance)}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              ⏱️ {Math.round(currentStep.duration / 60)} דקות
+            <Typography variant="caption" color="text.secondary">
+              {formatDuration(currentStep.duration)}
             </Typography>
           </Box>
         </CardContent>
       </Card>
 
-      {/* Next Instructions */}
       {nextSteps.length > 0 && (
-        <Paper elevation={2} sx={{ p: 1, bgcolor: 'background.paper' }}>
-          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-            הוראות הבאות:
+        <Paper
+          elevation={3}
+          sx={{
+            p: 1.5,
+            borderRadius: 2,
+            bgcolor: (t) => alpha(t.palette.background.paper, 0.9),
+            backdropFilter: 'blur(6px)',
+          }}>
+          <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ mb: 1, display: 'block' }}>
+            הבא בתור
           </Typography>
           {nextSteps.map((step, index) => (
             <Box
@@ -85,18 +84,13 @@ const InstructionsOverlay: React.FC<InstructionsOverlayProps> = ({ steps, curren
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1,
-                py: 0.5,
+                py: 0.75,
                 borderBottom: index < nextSteps.length - 1 ? 1 : 0,
                 borderColor: 'divider',
               }}>
-              <Typography variant="body2" sx={{ minWidth: 24, textAlign: 'center' }}>
-                {getStepIcon(step.type)}
-              </Typography>
-              <Typography variant="body2" sx={{ flex: 1, fontSize: '0.8rem' }}>
+              <TurnIcon fontSize="small" color="action" />
+              <Typography variant="body2" sx={{ flex: 1, fontSize: '0.8rem' }} noWrap>
                 {step.instruction}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {(step.distance / 1000).toFixed(1)}ק"מ
               </Typography>
             </Box>
           ))}

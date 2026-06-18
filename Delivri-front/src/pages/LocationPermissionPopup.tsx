@@ -1,4 +1,4 @@
-// LocationPermissionPopup.tsx
+import { LocationOn as LocationIcon } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -10,6 +10,7 @@ import {
   FormControlLabel,
   Link,
   Typography,
+  alpha,
 } from '@mui/material';
 import { useState } from 'react';
 import TermsDialog from './TermsDialog';
@@ -20,7 +21,7 @@ interface LocationPermissionPopupProps {
   onConfirm: () => void;
 }
 
-const LocationPermissionPopup: React.FC<LocationPermissionPopupProps> = ({ open, onClose, onConfirm }) => {
+const LocationPermissionPopup = ({ open, onClose, onConfirm }: LocationPermissionPopupProps) => {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
 
@@ -32,35 +33,39 @@ const LocationPermissionPopup: React.FC<LocationPermissionPopupProps> = ({ open,
   };
 
   return (
-    <Dialog open={open} maxWidth="sm" fullWidth>
-      {/* <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth> */}
-      <DialogTitle>
-        <Typography variant="h6" component="div">
-          📍 גישה למיקום שלך
+    <Dialog open={open} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1 }}>
+        <LocationIcon color="primary" />
+        <Typography variant="h6" component="span" fontWeight={700}>
+          גישה למיקום
         </Typography>
       </DialogTitle>
 
       <DialogContent>
-        <Typography variant="body1" paragraph>
-          כדי להשתמש בתכונת המיקום, אנחנו זקוקים להרשאתך לגשת למיקום המכשיר שלך.
+        <Typography variant="body1" color="text.secondary" paragraph>
+          Delivri זקוקה למיקום שלך כדי לחשב מסלולים, לנווט בין תחנות ולעקוב אחר ההתקדמות.
         </Typography>
 
-        <Box sx={{ bgcolor: 'grey.50', p: 2, borderRadius: 1, mb: 2 }}>
-          <Typography variant="body2" color="text.secondary">
-            <strong>שימוש במיקום שלך:</strong>
-            <br />• ניווט מדויק לתחנות המשלוח
-            <br />• מעקב אחר התקדמות במסלול
-            <br />• חישוב זמני הגעה משוערים
+        <Box
+          sx={{
+            bgcolor: (t) => alpha(t.palette.primary.main, 0.08),
+            p: 2,
+            borderRadius: 2,
+            mb: 2,
+            border: (t) => `1px solid ${alpha(t.palette.primary.main, 0.15)}`,
+          }}>
+          <Typography variant="body2" color="text.secondary" component="ul" sx={{ m: 0, pr: 2 }}>
+            <li>ניווט מדויק לתחנות המשלוח</li>
+            <li>מעקב אחר התקדמות במסלול</li>
+            <li>חישוב זמני הגעה משוערים</li>
           </Typography>
         </Box>
 
         <FormControlLabel
-          control={
-            <Checkbox checked={acceptedTerms} onChange={(e) => setAcceptedTerms(e.target.checked)} color="primary" />
-          }
+          control={<Checkbox checked={acceptedTerms} onChange={(e) => setAcceptedTerms(e.target.checked)} color="primary" />}
           label={
             <Typography variant="body2">
-              אני מאשר/ת את
+              אני מאשר/ת את{' '}
               <Link
                 href="#"
                 onClick={(e) => {
@@ -68,17 +73,17 @@ const LocationPermissionPopup: React.FC<LocationPermissionPopupProps> = ({ open,
                   setTermsOpen(true);
                 }}>
                 תנאי השימוש
-              </Link>
-              <TermsDialog open={termsOpen} onClose={() => setTermsOpen(false)} />
-              ומאפשר/ת גישה למיקום שלי
+              </Link>{' '}
+              ומאפשר/ת גישה למיקום
             </Typography>
           }
         />
+        <TermsDialog open={termsOpen} onClose={() => setTermsOpen(false)} />
       </DialogContent>
 
-      <DialogActions sx={{ p: 2, gap: 1 }}>
-        <Button onClick={handleConfirm} variant="contained" disabled={!acceptedTerms}>
-          אשר גישה למיקום
+      <DialogActions sx={{ p: 2.5, pt: 0 }}>
+        <Button onClick={handleConfirm} variant="contained" size="large" fullWidth disabled={!acceptedTerms}>
+          אשר והמשך
         </Button>
       </DialogActions>
     </Dialog>
