@@ -1,17 +1,28 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Autocomplete,
   Box,
-  CircularProgress,
-  Grid,
+  Button,
+  Chip,
   Paper,
+  Stack,
   TextField,
   Typography,
+  alpha,
 } from '@mui/material';
-import { logger } from '../utils/logger';
+import { NearMe as NearMeIcon } from '@mui/icons-material';
+import InlineLoader from '../components/ui/InlineLoader';
+import { API } from '../config/api';
+import {
+  getCityGroupLabel,
+  shouldRefreshCitySort,
+  sortCitiesByProximity,
+} from './cityProximity';
 
 interface Props {
-  onSelect: (city: string, street: string, houseNumber?: string) => void;
+  currentLocation: [number, number] | null;
+  onSelect: (city: string, street: string, houseNumber?: string) => Promise<void> | void;
+  disabled?: boolean;
 }
 
 interface ApiResponse {
@@ -23,138 +34,236 @@ interface ApiResponse {
 const CITY_FIELD = 'שם_ישוב';
 const STREET_FIELD = 'שם_רחוב';
 
-const CityStreetSelector: React.FC<Props> = ({ onSelect }) => {
+const CityStreetSelector = ({ currentLocation, onSelect, disabled = false }: Props) => {
   const [cities, setCities] = useState<string[]>([]);
+  const [sortedCities, setSortedCities] = useState<string[]>([]);
+  const [nearbyCities, setNearbyCities] = useState<Set<string>>(new Set());
+  const [userCity, setUserCity] = useState<string | null>(null);
   const [streetRecords, setStreetRecords] = useState<Array<Record<string, string>>>([]);
   const [filteredStreets, setFilteredStreets] = useState<string[]>([]);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [selectedStreet, setSelectedStreet] = useState<string | null>(null);
   const [houseNumber, setHouseNumber] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loadingCities, setLoadingCities] = useState(true);
+  const [sortingCities, setSortingCities] = useState(false);
+  const [loadingStreets, setLoadingStreets] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchCities = async () => {
-      setLoading(true);
+      setLoadingCities(true);
       try {
         const response = await fetch(
-          'https://data.gov.il/api/3/action/datastore_search?resource_id=a7296d1a-f8c9-4b70-96c2-6ebb4352f8e3&limit=50000',
+          `${API.DATA_GOV_IL}?resource_id=a7296d1a-f8c9-4b70-96c2-6ebb4352f8e3&limit=50000`,
         );
         const data = (await response.json()) as ApiResponse;
         const records = data.result.records;
-
         setStreetRecords(records);
         const uniqueCities = Array.from(
           new Set(records.map((record) => record[CITY_FIELD]).filter(Boolean)),
         ).sort((a, b) => a.localeCompare(b, 'he'));
         setCities(uniqueCities);
+        setSortedCities(uniqueCities);
       } catch (error) {
-        logger.error('Failed to load city list', error);
+        console.error('Failed to load city list', error);
       } finally {
-        setLoading(false);
+        setLoadingCities(false);
       }
     };
 
     fetchCities();
   }, []);
 
+  useEffect(() => {
+    if (!cities.length || !currentLocation) return;
+
+    let cancelled = false;
+    const applySort = async () => {
+      if (!shouldRefreshCitySort(currentLocation) && sortedCities.length === cities.length) return;
+      setSortingCities(true);
+      try {
+        const result = await sortCitiesByProximity(cities, currentLocation);
+        if (!cancelled) {
+          setSortedCities(result.sortedCities);
+          setNearbyCities(result.nearbyCities);
+          setUserCity(result.userCity);
+        }
+      } finally {
+        if (!cancelled) setSortingCities(false);
+      }
+    };
+
+    applySort();
+    return () => {
+      cancelled = true;
+    };
+  }, [cities, currentLocation]);
+
+  const cityOptions = useMemo(
+    () => (sortedCities.length ? sortedCities : cities),
+    [sortedCities, cities],
+  );
+
   const handleCityChange = (value: string | null) => {
     setSelectedCity(value);
     setSelectedStreet(null);
 
     if (value) {
+      setLoadingStreets(true);
       const cityStreets = streetRecords
         .filter((record) => record[CITY_FIELD] === value)
         .map((record) => record[STREET_FIELD])
         .filter(Boolean);
-
       const uniqueStreets = Array.from(new Set(cityStreets)).sort((a, b) => a.localeCompare(b, 'he'));
       setFilteredStreets(uniqueStreets);
+      setLoadingStreets(false);
     } else {
       setFilteredStreets([]);
     }
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!selectedCity || !selectedStreet) {
       alert('בחר עיר ורחוב לפני הוספת התחנה למסלול');
       return;
     }
 
-    onSelect(selectedCity, selectedStreet, houseNumber.trim() || undefined);
+    setSubmitting(true);
+    try {
+      await onSelect(selectedCity, selectedStreet, houseNumber.trim() || undefined);
+      setSelectedStreet(null);
+      setHouseNumber('');
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  if (loadingCities) {
+    return (
+      <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, position: 'relative' }}>
+        <InlineLoader label="טוען רשימת ערים..." size="sm" fullWidth />
+      </Paper>
+    );
+  }
 
   return (
     <Paper
-      elevation={2}
+      variant="outlined"
       sx={{
-        p: 2,
+        p: { xs: 1.5, sm: 2 },
         borderRadius: 2,
         bgcolor: 'background.paper',
-        boxShadow: 3,
         direction: 'rtl',
+        width: '100%',
+        minWidth: 0,
+        position: 'relative',
       }}>
-      <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold', textAlign: 'center' }}>
-        בחירת עיר, רחוב ומספר בית
-      </Typography>
-
-      {loading ? (
-        <Box display="flex" justifyContent="center" py={4}>
-          <CircularProgress />
+      {sortingCities && (
+        <Box sx={{ position: 'absolute', top: 8, left: 8, zIndex: 1 }}>
+          <InlineLoader label="ממיין ערים..." size="xs" />
         </Box>
-      ) : (
-        <Grid container spacing={2}>
-          <Grid >
-            <Autocomplete
-              size="small"
-              fullWidth
-              options={cities}
-              value={selectedCity}
-              onChange={(_, value) => handleCityChange(value)}
-              renderInput={(params) => <TextField {...params} label="עיר" variant="outlined" />}
-            />
-          </Grid>
-
-          <Grid >
-            <Autocomplete
-              size="small"
-              fullWidth
-              options={filteredStreets}
-              value={selectedStreet}
-              disabled={!selectedCity}
-              onChange={(_, value) => setSelectedStreet(value)}
-              renderInput={(params) => <TextField {...params} label="רחוב" variant="outlined" />}
-            />
-          </Grid>
-
-          <Grid >
-            <TextField
-              size="small"
-              fullWidth
-              label="מספר בית"
-              variant="outlined"
-              value={houseNumber}
-              onChange={(event) => setHouseNumber(event.target.value)}
-            />
-          </Grid>
-
-          <Grid >
-            <Box
-              onClick={handleConfirm}
-              sx={{
-                bgcolor: 'primary.main',
-                color: 'white',
-                textAlign: 'center',
-                py: 1,
-                borderRadius: 1.5,
-                cursor: 'pointer',
-                '&:hover': { bgcolor: 'primary.dark' },
-                transition: '0.3s',
-              }}>
-              הוספת התחנה למסלול
-            </Box>
-          </Grid>
-        </Grid>
       )}
+
+      {userCity && (
+        <Chip
+          icon={<NearMeIcon />}
+          label={`קרוב ל: ${userCity}`}
+          size="small"
+          color="primary"
+          variant="outlined"
+          sx={{ mb: 1.5, maxWidth: '100%' }}
+        />
+      )}
+
+      <Stack spacing={1.5} sx={{ width: '100%', minWidth: 0 }}>
+        <Autocomplete
+          size="small"
+          fullWidth
+          disabled={disabled || submitting}
+          options={cityOptions}
+          value={selectedCity}
+          onChange={(_, value) => handleCityChange(value)}
+          groupBy={(option) => getCityGroupLabel(option, nearbyCities)}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="עיר"
+              placeholder="חפש עיר..."
+              slotProps={{
+                input: {
+                  ...params.InputProps,
+                  endAdornment: (
+                    <>
+                      {sortingCities && <InlineLoader size="xs" />}
+                      {params.InputProps.endAdornment}
+                    </>
+                  ),
+                },
+              }}
+            />
+          )}
+          renderOption={(props, option) => {
+            const isNearby = nearbyCities.has(option);
+            return (
+              <Box component="li" {...props} key={option}>
+                <Typography variant="body2" sx={{ fontWeight: isNearby ? 600 : 400 }}>
+                  {option}
+                </Typography>
+              </Box>
+            );
+          }}
+          slotProps={{
+            paper: { sx: { maxHeight: 280 } },
+            listbox: { sx: { maxHeight: 280 } },
+          }}
+        />
+
+        <Box sx={{ position: 'relative', width: '100%' }}>
+          {loadingStreets && <InlineLoader label="טוען רחובות..." size="xs" overlay />}
+          <Autocomplete
+            size="small"
+            fullWidth
+            disabled={!selectedCity || disabled || submitting}
+            options={filteredStreets}
+            value={selectedStreet}
+            onChange={(_, value) => setSelectedStreet(value)}
+            renderInput={(params) => (
+              <TextField {...params} label="רחוב" placeholder={selectedCity ? 'חפש רחוב...' : 'בחר עיר קודם'} />
+            )}
+            slotProps={{
+              paper: { sx: { maxHeight: 240 } },
+              listbox: { sx: { maxHeight: 240 } },
+            }}
+          />
+        </Box>
+
+        <TextField
+          size="small"
+          fullWidth
+          label="מספר בית"
+          placeholder="אופציונלי"
+          value={houseNumber}
+          disabled={disabled || submitting}
+          onChange={(e) => setHouseNumber(e.target.value)}
+        />
+
+        <Button
+          variant="contained"
+          fullWidth
+          disabled={!selectedCity || !selectedStreet || disabled || submitting}
+          onClick={handleConfirm}
+          sx={{
+            py: 1.2,
+            position: 'relative',
+            bgcolor: submitting ? 'primary.dark' : 'primary.main',
+          }}>
+          {submitting ? (
+            <InlineLoader label="מאתר כתובת..." size="xs" />
+          ) : (
+            'הוספת התחנה למסלול'
+          )}
+        </Button>
+      </Stack>
     </Paper>
   );
 };
