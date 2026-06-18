@@ -63,8 +63,7 @@ import {
   Bar,
 } from 'recharts';
 import { getRouteMetrics, StatsAPI } from '../../services/StatsAPI';
-
-
+import { logger } from '../../utils/logger';
 
 export default function AnalyticsDashboard({ open, onClose }: { open: boolean; onClose: () => void }) {
   const theme = useTheme();
@@ -74,9 +73,14 @@ export default function AnalyticsDashboard({ open, onClose }: { open: boolean; o
   const [filter, setFilter] = useState({ time: '7d', city: 'all' });
   const [d, setD] = useState<any>({});
 
-  const load = async () => {
+  const load = async (isManualRefresh = false) => {
+    if (isManualRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+
     try {
-      // r ? setRefreshing(true) : setLoading(true);
       const [activities, times, metrics, events, cities, daily, searches, routes] = await Promise.all([
         StatsAPI.getUserActivities(),
         StatsAPI.getTimeStats(),
@@ -98,14 +102,14 @@ export default function AnalyticsDashboard({ open, onClose }: { open: boolean; o
         routes,
       });
     } catch (e) {
-      console.error(e);
+      logger.error('Failed loading analytics dashboard data', e);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
   useEffect(() => {
-    load();
+    void load();
   }, [filter.time]);
   if (loading)
     return (
@@ -135,6 +139,7 @@ export default function AnalyticsDashboard({ open, onClose }: { open: boolean; o
       </CardContent>
     </Card>
   );
+  const maxSearchCount = Math.max(1, d.searches?.[0]?.count ?? 0);
 
   return (
     <Dialog open={open} onClose={onClose} fullScreen maxWidth="xl" fullWidth>
@@ -181,7 +186,7 @@ export default function AnalyticsDashboard({ open, onClose }: { open: boolean; o
               </Select>
             </FormControl>
             <Tooltip title="רענן">
-              <IconButton onClick={() => load()} disabled={refreshing}>
+              <IconButton onClick={() => void load(true)} disabled={refreshing}>
                 <Refresh sx={{ transform: refreshing ? 'rotate(360deg)' : 'none', transition: '0.5s' }} />
               </IconButton>
             </Tooltip>
@@ -352,7 +357,7 @@ export default function AnalyticsDashboard({ open, onClose }: { open: boolean; o
                   </Typography>
                   <LinearProgress
                     variant="determinate"
-                    value={(s.count / d.searches[0].count) * 100}
+                    value={(s.count / maxSearchCount) * 100}
                     sx={{ height: 4, borderRadius: 2, mt: 0.5 }}
                   />
                 </Box>

@@ -1,5 +1,6 @@
 import { LocationOn as LocationIcon } from '@mui/icons-material';
 import {
+  Alert,
   Box,
   Button,
   Checkbox,
@@ -12,22 +13,64 @@ import {
   Typography,
   alpha,
 } from '@mui/material';
-import { useState } from 'react';
+import { useState, type MouseEvent } from 'react';
 import TermsDialog from './TermsDialog';
 
 interface LocationPermissionPopupProps {
   open: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => Promise<string | null>;
 }
 
 const LocationPermissionPopup = ({ open, onClose, onConfirm }: LocationPermissionPopupProps) => {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const handleConfirm = () => {
-    if (acceptedTerms) {
-      onConfirm();
+  const handleConfirm = async () => {
+    if (acceptedTerms && !isSubmitting) {
+      setIsSubmitting(true);
+      setSubmitError(null);
+
+      const errorMessage = await onConfirm();
+      if (!errorMessage) {
+        setIsSubmitting(false);
+        setSubmitError(null);
+        setAcceptedTerms(false);
+        setTermsOpen(false);
+        onClose();
+        return;
+      }
+
+      setSubmitError(errorMessage);
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleTermsChange = (checked: boolean) => {
+    setAcceptedTerms(checked);
+    if (submitError) {
+      setSubmitError(null);
+    }
+  };
+
+  const handleCloseTerms = () => {
+    if (!isSubmitting) {
+      setTermsOpen(false);
+    }
+  };
+
+  const handleOpenTerms = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    if (!isSubmitting) {
+      setTermsOpen(true);
+    }
+  };
+
+  const handleCloseDialog = () => {
+    if (!isSubmitting) {
+      setSubmitError(null);
       onClose();
     }
   };
@@ -68,10 +111,7 @@ const LocationPermissionPopup = ({ open, onClose, onConfirm }: LocationPermissio
               אני מאשר/ת את{' '}
               <Link
                 href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setTermsOpen(true);
-                }}>
+                onClick={handleOpenTerms}>
                 תנאי השימוש
               </Link>{' '}
               ומאפשר/ת גישה למיקום
