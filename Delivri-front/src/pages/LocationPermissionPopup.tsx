@@ -75,16 +75,23 @@ const LocationPermissionPopup = ({ open, onClose, onConfirm }: LocationPermissio
       onClose={handleCloseDialog}
       maxWidth="sm"
       fullWidth
-      PaperProps={{ sx: { borderRadius: 3 } }}>
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1 }}>
-        <LocationIcon color="primary" />
-        <Typography variant="h6" component="span" fontWeight={700}>
-          גישה למיקום
-        </Typography>
+      dir="rtl"
+      PaperProps={{ sx: { borderRadius: 3, textAlign: 'right' } }}>
+      <DialogTitle
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          pb: 1,
+          flexDirection: 'row',
+          justifyContent: 'flex-start',
+        }}>
+        <LocationIcon color="primary" fontSize="small" />
+        גישה למיקום
       </DialogTitle>
 
-      <DialogContent>
-        <Typography variant="body1" color="text.secondary" paragraph>
+      <DialogContent sx={{ textAlign: 'right' }}>
+        <Typography variant="body1" color="text.secondary" paragraph sx={{ textAlign: 'right' }}>
           Delivri זקוקה למיקום שלך כדי לחשב מסלולים, לנווט בין תחנות ולעקוב אחר ההתקדמות.
         </Typography>
 
@@ -95,31 +102,40 @@ const LocationPermissionPopup = ({ open, onClose, onConfirm }: LocationPermissio
             borderRadius: 2,
             mb: 2,
             border: (t) => `1px solid ${alpha(t.palette.primary.main, 0.15)}`,
+            textAlign: 'right',
           }}>
-          <Typography variant="body2" color="text.secondary" component="ul" sx={{ m: 0, pr: 2 }}>
-            <li>ניווט מדויק לתחנות המשלוח</li>
-            <li>מעקב אחר התקדמות במסלול</li>
-            <li>חישוב זמני הגעה משוערים</li>
-          </Typography>
+          <Box component="ul" sx={{ m: 0, pr: 2.5, pl: 0, textAlign: 'right' }}>
+            <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+              ניווט מדויק לתחנות המשלוח
+            </Typography>
+            <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+              מעקב אחר התקדמות במסלול
+            </Typography>
+            <Typography component="li" variant="body2" color="text.secondary">
+              חישוב זמני הגעה משוערים
+            </Typography>
+          </Box>
         </Box>
 
         {submitError && (
-          <Alert severity="error" sx={{ mb: 2 }}>
+          <Alert severity="error" sx={{ mb: 2, textAlign: 'right' }}>
             {submitError}
           </Alert>
         )}
 
         <FormControlLabel
+          sx={{ alignItems: 'flex-start', mr: 0, ml: 0, width: '100%' }}
           control={
             <Checkbox
               checked={acceptedTerms}
               onChange={(e) => handleTermsChange(e.target.checked)}
               color="primary"
               disabled={isSubmitting}
+              sx={{ pt: 0.25 }}
             />
           }
           label={
-            <Typography variant="body2">
+            <Typography variant="body2" sx={{ textAlign: 'right', lineHeight: 1.6 }}>
               אני מאשר/ת את{' '}
               <Link href="#" onClick={handleOpenTerms}>
                 תנאי השימוש
@@ -131,7 +147,7 @@ const LocationPermissionPopup = ({ open, onClose, onConfirm }: LocationPermissio
         <TermsDialog open={termsOpen} onClose={handleCloseTerms} />
       </DialogContent>
 
-      <DialogActions sx={{ p: 2.5, pt: 0 }}>
+      <DialogActions sx={{ p: 2.5, pt: 0, justifyContent: 'stretch' }}>
         <Button
           onClick={handleConfirm}
           variant="contained"
@@ -140,7 +156,7 @@ const LocationPermissionPopup = ({ open, onClose, onConfirm }: LocationPermissio
           disabled={!acceptedTerms || isSubmitting}>
           {isSubmitting ? (
             <>
-              <CircularProgress size={18} color="inherit" sx={{ mr: 1 }} />
+              <CircularProgress size={18} color="inherit" sx={{ ml: 1 }} />
               מאמת מיקום...
             </>
           ) : (

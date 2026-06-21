@@ -22,30 +22,33 @@ const ApiPerformance: React.FC<ApiPerformanceProps> = ({ timings, loading }) => 
   return (
     <Paper
       elevation={1}
+      dir="rtl"
       sx={{
         p: 2,
-        mb: 2,
         bgcolor: 'background.default',
+        textAlign: 'right',
       }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-        <SpeedIcon color="action" />
-        <Typography variant="h6" component="h3">
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, flexDirection: 'row' }}>
+        <SpeedIcon color="action" fontSize="small" />
+        <Typography variant="subtitle1" component="h3" fontWeight={700} sx={{ flex: 1, textAlign: 'right' }}>
           ביצועי API
         </Typography>
         {loading && <Chip label="טוען..." size="small" color="primary" variant="outlined" />}
       </Box>
 
       {Object.keys(timings).length === 0 ? (
-        <Typography variant="body2" color="text.secondary" textAlign="center">
+        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'right' }}>
           אין נתוני זמן טעינה עדיין
         </Typography>
       ) : (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {Object.entries(timings).map(([name, duration]) => (
             <Box key={name}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                <Typography variant="body2">{name}</Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5, gap: 1 }}>
+                <Typography variant="body2" sx={{ textAlign: 'right' }}>
+                  {name}
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
                   <Chip
                     label={getTimingLabel(duration)}
                     size="small"

@@ -77,9 +77,12 @@ export const useRouteLoader = ({
         }
 
         const optimizedCoords = await trackApiCall(() => optimizeRouteWithTSP(coords), 'אופטימיזציית מסלול');
-        const routeData = await trackApiCall(() => getRouteData(optimizedCoords), 'טעינת נתיב');
 
-        if (!routeData) throw new Error('לא התקבלו נתוני מסלול');
+        if (optimizedCoords.length < 2) {
+          throw new Error('לא ניתן לבנות מסלול — נדרשות לפחות 2 נקודות');
+        }
+
+        const routeData = await trackApiCall(() => getRouteData(optimizedCoords), 'טעינת נתיב');
 
         setTotalDistance(routeData.distance);
         setTotalDuration(routeData.duration);

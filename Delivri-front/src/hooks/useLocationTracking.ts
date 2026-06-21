@@ -1,10 +1,19 @@
 import * as maplibregl from 'maplibre-gl';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { haversineKm } from '../utils/geoUtils';
 import { useGeolocation } from '../utils/mapUtils';
 
 export const useLocationTracking = (mapRef: React.RefObject<maplibregl.Map | null>, mapReady: boolean) => {
   const watchIdRef = useRef<number | null>(null);
+  const lastLocationRef = useRef<[number, number] | null>(null);
   const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null);
+
+  const updateLocationIfMoved = useCallback((coords: [number, number], minMoveKm = 0.05) => {
+    const prev = lastLocationRef.current;
+    if (prev && haversineKm(prev, coords) < minMoveKm) return;
+    lastLocationRef.current = coords;
+    setCurrentLocation(coords);
+  }, []);
   const [tracking, setTracking] = useState(false);
   const [locationPopupOpen, setLocationPopupOpen] = useState(true);
   const { locationAccuracy, getCurrentLocation } = useGeolocation();
@@ -12,6 +21,7 @@ export const useLocationTracking = (mapRef: React.RefObject<maplibregl.Map | nul
   const handleLocationConfirm = useCallback(async (): Promise<string | null> => {
     try {
       const pos = await getCurrentLocation();
+      lastLocationRef.current = pos;
       setCurrentLocation(pos);
       setTracking(true);
       setLocationPopupOpen(false);
@@ -29,15 +39,17 @@ export const useLocationTracking = (mapRef: React.RefObject<maplibregl.Map | nul
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         const coords: [number, number] = [pos.coords.longitude, pos.coords.latitude];
-        setCurrentLocation(coords);
+        updateLocationIfMoved(coords);
 
         if (!marker) {
           const el = document.createElement('div');
           el.className = 'user-location-arrow';
+          el.style.direction = 'ltr';
           el.innerHTML = `<svg width="30" height="30" viewBox="0 0 24 24" fill="#0d9488" stroke="white" stroke-width="2"><path d="M12 2 L19 21 L12 17 L5 21 Z"/></svg>`;
           marker = new maplibregl.Marker({ element: el, rotationAlignment: 'map', anchor: 'center' })
             .setLngLat(coords)
             .addTo(map);
+          map.flyTo({ center: coords, zoom: 14, essential: true });
         } else {
           marker.setLngLat(coords);
         }
@@ -46,21 +58,24 @@ export const useLocationTracking = (mapRef: React.RefObject<maplibregl.Map | nul
       { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 },
     );
 
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, [tracking, mapReady, mapRef]);
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+      marker?.remove();
+    };
+  }, [tracking, mapReady, mapRef, updateLocationIfMoved]);
 
   const startNavigationWatch = useCallback(() => {
     if (watchIdRef.current !== null) return;
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
         const coords: [number, number] = [pos.coords.longitude, pos.coords.latitude];
-        setCurrentLocation(coords);
+        updateLocationIfMoved(coords, 0.02);
         mapRef.current?.flyTo({ center: coords, zoom: 15, essential: true });
       },
       (err) => console.error('Location watch error:', err),
       { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 },
     );
-  }, [mapRef]);
+  }, [mapRef, updateLocationIfMoved]);
 
   const stopNavigationWatch = useCallback(() => {
     if (watchIdRef.current !== null) {

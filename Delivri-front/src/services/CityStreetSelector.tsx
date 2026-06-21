@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Autocomplete,
   Box,
@@ -13,9 +13,10 @@ import {
 import { NearMe as NearMeIcon } from '@mui/icons-material';
 import InlineLoader from '../components/ui/InlineLoader';
 import { API } from '../config/api';
+import { autocompleteRtlProps } from '../theme/autocompleteRtl';
+import { locationStableKey } from '../utils/geoUtils';
 import {
   getCityGroupLabel,
-  shouldRefreshCitySort,
   sortCitiesByProximity,
 } from './cityProximity';
 
@@ -34,19 +35,25 @@ interface ApiResponse {
 const CITY_FIELD = 'שם_ישוב';
 const STREET_FIELD = 'שם_רחוב';
 
+const normalizeGovField = (value?: string) => value?.replace(/\s+/g, ' ').trim() ?? '';
+
+const normalizeStreetRecord = (record: Record<string, string>): Record<string, string> => ({
+  ...record,
+  [CITY_FIELD]: normalizeGovField(record[CITY_FIELD]),
+  [STREET_FIELD]: normalizeGovField(record[STREET_FIELD]),
+});
+
 const CityStreetSelector = ({ currentLocation, onSelect, disabled = false }: Props) => {
   const [cities, setCities] = useState<string[]>([]);
   const [sortedCities, setSortedCities] = useState<string[]>([]);
   const [nearbyCities, setNearbyCities] = useState<Set<string>>(new Set());
   const [userCity, setUserCity] = useState<string | null>(null);
   const [streetRecords, setStreetRecords] = useState<Array<Record<string, string>>>([]);
-  const [filteredStreets, setFilteredStreets] = useState<string[]>([]);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [selectedStreet, setSelectedStreet] = useState<string | null>(null);
   const [houseNumber, setHouseNumber] = useState('');
   const [loadingCities, setLoadingCities] = useState(true);
   const [sortingCities, setSortingCities] = useState(false);
-  const [loadingStreets, setLoadingStreets] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -57,7 +64,7 @@ const CityStreetSelector = ({ currentLocation, onSelect, disabled = false }: Pro
           `${API.DATA_GOV_IL}?resource_id=a7296d1a-f8c9-4b70-96c2-6ebb4352f8e3&limit=50000`,
         );
         const data = (await response.json()) as ApiResponse;
-        const records = data.result.records;
+        const records = data.result.records.map(normalizeStreetRecord);
         setStreetRecords(records);
         const uniqueCities = Array.from(
           new Set(records.map((record) => record[CITY_FIELD]).filter(Boolean)),
@@ -74,15 +81,19 @@ const CityStreetSelector = ({ currentLocation, onSelect, disabled = false }: Pro
     fetchCities();
   }, []);
 
+  const locationKey = currentLocation ? locationStableKey(currentLocation) : null;
+  const locationRef = useRef(currentLocation);
+  locationRef.current = currentLocation;
+
   useEffect(() => {
-    if (!cities.length || !currentLocation) return;
+    const loc = locationRef.current;
+    if (!cities.length || !loc || !locationKey) return;
 
     let cancelled = false;
     const applySort = async () => {
-      if (!shouldRefreshCitySort(currentLocation) && sortedCities.length === cities.length) return;
       setSortingCities(true);
       try {
-        const result = await sortCitiesByProximity(cities, currentLocation);
+        const result = await sortCitiesByProximity(cities, loc);
         if (!cancelled) {
           setSortedCities(result.sortedCities);
           setNearbyCities(result.nearbyCities);
@@ -97,29 +108,28 @@ const CityStreetSelector = ({ currentLocation, onSelect, disabled = false }: Pro
     return () => {
       cancelled = true;
     };
-  }, [cities, currentLocation]);
+  }, [cities, locationKey]);
 
   const cityOptions = useMemo(
     () => (sortedCities.length ? sortedCities : cities),
     [sortedCities, cities],
   );
 
+  const streetOptions = useMemo(() => {
+    if (!selectedCity) return [];
+    return Array.from(
+      new Set(
+        streetRecords
+          .filter((record) => record[CITY_FIELD] === selectedCity)
+          .map((record) => record[STREET_FIELD])
+          .filter(Boolean),
+      ),
+    ).sort((a, b) => a.localeCompare(b, 'he'));
+  }, [selectedCity, streetRecords]);
+
   const handleCityChange = (value: string | null) => {
     setSelectedCity(value);
     setSelectedStreet(null);
-
-    if (value) {
-      setLoadingStreets(true);
-      const cityStreets = streetRecords
-        .filter((record) => record[CITY_FIELD] === value)
-        .map((record) => record[STREET_FIELD])
-        .filter(Boolean);
-      const uniqueStreets = Array.from(new Set(cityStreets)).sort((a, b) => a.localeCompare(b, 'he'));
-      setFilteredStreets(uniqueStreets);
-      setLoadingStreets(false);
-    } else {
-      setFilteredStreets([]);
-    }
   };
 
   const handleConfirm = async () => {
@@ -153,13 +163,12 @@ const CityStreetSelector = ({ currentLocation, onSelect, disabled = false }: Pro
         p: 1,
         borderRadius: 1.5,
         bgcolor: 'background.paper',
-        direction: 'rtl',
         width: '100%',
         minWidth: 0,
         position: 'relative',
       }}>
       {sortingCities && (
-        <Box sx={{ position: 'absolute', top: 4, left: 4, zIndex: 1 }}>
+        <Box sx={{ position: 'absolute', top: 4, insetInlineStart: 4, zIndex: 1 }}>
           <InlineLoader label="ממיין..." size="xs" />
         </Box>
       )}
@@ -167,7 +176,7 @@ const CityStreetSelector = ({ currentLocation, onSelect, disabled = false }: Pro
       {userCity && (
         <Chip
           icon={<NearMeIcon sx={{ fontSize: '14px !important' }} />}
-          label={`קרוב ל: ${userCity}`}
+          label={`העיר שלך: ${userCity}`}
           size="small"
           color="primary"
           variant="outlined"
@@ -175,30 +184,26 @@ const CityStreetSelector = ({ currentLocation, onSelect, disabled = false }: Pro
         />
       )}
 
+      {!userCity && currentLocation && sortingCities && (
+        <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+          מזהה ערים קרובות...
+        </Typography>
+      )}
+
       <Stack spacing={1} sx={{ width: '100%', minWidth: 0 }}>
         <Autocomplete
+          {...autocompleteRtlProps}
           size="small"
           fullWidth
           disabled={disabled || submitting}
+          loading={sortingCities}
           options={cityOptions}
           value={selectedCity}
           onChange={(_, value) => handleCityChange(value)}
+          isOptionEqualToValue={(a, b) => a === b}
           groupBy={(option) => getCityGroupLabel(option, nearbyCities)}
           renderInput={(params) => (
-            <TextField
-              {...params}
-              label="עיר"
-              placeholder="חפש עיר..."
-              InputProps={{
-                ...params.InputProps,
-                endAdornment: (
-                  <>
-                    {sortingCities && <CircularProgress color="inherit" size={16} sx={{ mr: 1 }} />}
-                    {params.InputProps.endAdornment}
-                  </>
-                ),
-              }}
-            />
+            <TextField {...params} label="עיר" placeholder="חפש עיר..." />
           )}
           renderOption={(props, option) => {
             const { key, ...rest } = props;
@@ -212,29 +217,35 @@ const CityStreetSelector = ({ currentLocation, onSelect, disabled = false }: Pro
             );
           }}
           slotProps={{
-            paper: { sx: { maxHeight: 280 } },
-            listbox: { sx: { maxHeight: 280 } },
+            ...autocompleteRtlProps.slotProps,
+            paper: { ...autocompleteRtlProps.slotProps?.paper, sx: { maxHeight: 280, direction: 'rtl', textAlign: 'right' } },
+            listbox: { ...autocompleteRtlProps.slotProps?.listbox, sx: { maxHeight: 280, direction: 'rtl', textAlign: 'right' } },
           }}
         />
 
-        <Box sx={{ position: 'relative', width: '100%' }}>
-          {loadingStreets && <InlineLoader label="טוען רחובות..." size="xs" overlay />}
-          <Autocomplete
-            size="small"
-            fullWidth
-            disabled={!selectedCity || disabled || submitting}
-            options={filteredStreets}
-            value={selectedStreet}
-            onChange={(_, value) => setSelectedStreet(value)}
-            renderInput={(params) => (
-              <TextField {...params} label="רחוב" placeholder={selectedCity ? 'חפש רחוב...' : 'בחר עיר קודם'} />
-            )}
-            slotProps={{
-              paper: { sx: { maxHeight: 240 } },
-              listbox: { sx: { maxHeight: 240 } },
-            }}
-          />
-        </Box>
+        <Autocomplete
+          {...autocompleteRtlProps}
+          size="small"
+          fullWidth
+          disabled={!selectedCity || disabled || submitting}
+          options={streetOptions}
+          value={selectedStreet}
+          onChange={(_, value) => setSelectedStreet(value)}
+          isOptionEqualToValue={(a, b) => a === b}
+          noOptionsText={selectedCity ? 'לא נמצאו רחובות לעיר זו' : 'בחר עיר קודם'}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="רחוב"
+              placeholder={selectedCity ? `חפש רחוב (${streetOptions.length})...` : 'בחר עיר קודם'}
+            />
+          )}
+          slotProps={{
+            ...autocompleteRtlProps.slotProps,
+            paper: { ...autocompleteRtlProps.slotProps?.paper, sx: { maxHeight: 240, direction: 'rtl', textAlign: 'right' } },
+            listbox: { ...autocompleteRtlProps.slotProps?.listbox, sx: { maxHeight: 240, direction: 'rtl', textAlign: 'right' } },
+          }}
+        />
 
         <TextField
           size="small"
@@ -258,7 +269,7 @@ const CityStreetSelector = ({ currentLocation, onSelect, disabled = false }: Pro
           }}>
           {submitting ? (
             <>
-              <CircularProgress size={16} color="inherit" sx={{ mr: 1 }} />
+              <CircularProgress size={16} color="inherit" sx={{ ml: 1 }} />
               מאתר כתובת...
             </>
           ) : (

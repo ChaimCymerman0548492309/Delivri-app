@@ -185,8 +185,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
-        direction: 'rtl',
-        borderRight: (t) => `1px solid ${t.palette.divider}`,
+        borderInlineStart: (t) => `1px solid ${t.palette.divider}`,
         bgcolor: 'background.paper',
         minWidth: 0,
         ...sx,
@@ -227,7 +226,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
             flexShrink: 0,
           }}>
           <Typography variant="caption" sx={{ display: 'flex', alignItems: 'center', fontSize: '0.7rem' }}>
-            <MyLocationIcon sx={{ fontSize: 12, ml: 0.5 }} />
+            <MyLocationIcon sx={{ fontSize: 12, ms: 0.5 }} />
             מיקום זמין
             {locationAccuracy && ` · ~${Math.round(locationAccuracy)} מ׳`}
           </Typography>
@@ -382,13 +381,13 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
 
       {/* Postpone Dialog */}
       <Dialog open={postponeDialogOpen} onClose={onCancelPostpone} fullScreen={isMobile}>
-        <DialogTitle sx={{ direction: 'rtl' }}>דחיית תחנה</DialogTitle>
-        <DialogContent sx={{ direction: 'rtl' }}>
+        <DialogTitle>דחיית תחנה</DialogTitle>
+        <DialogContent>
           <Typography>
             {pendingStop ? `האם ברצונך לדחות את "${pendingStop.address}" לסוף?` : 'האם לדחות את התחנה לסוף המסלול?'}
           </Typography>
         </DialogContent>
-        <DialogActions sx={{ direction: 'rtl', gap: 1, p: 2 }}>
+        <DialogActions sx={{ gap: 1, p: 2 }}>
           <Button onClick={onCancelPostpone} color="inherit" size={isMobile ? 'large' : 'medium'} fullWidth={isMobile}>
             ביטול
           </Button>

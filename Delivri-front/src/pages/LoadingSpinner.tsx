@@ -27,7 +27,7 @@ const LoadingSpinner = ({ message = 'טוען...', size = 36, compact = false }:
       <CircularProgress
         size={size}
         thickness={4}
-        sx={{ color: 'primary.main', position: 'absolute', left: 0 }}
+        sx={{ color: 'primary.main', position: 'absolute', insetInlineStart: 0 }}
       />
     </Box>
     {message && (

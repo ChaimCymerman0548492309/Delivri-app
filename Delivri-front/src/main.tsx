@@ -4,15 +4,18 @@ import { CssBaseline, ThemeProvider } from '@mui/material';
 import MapViewEnhanced from './components/MapViewEnhanced';
 import AppErrorBoundary from './pages/ErrorBoundary';
 import { appTheme } from './theme/appTheme';
+import RtlProvider from './theme/RtlProvider';
 import './App.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ThemeProvider theme={appTheme}>
-      <CssBaseline />
-      <AppErrorBoundary>
-        <MapViewEnhanced />
-      </AppErrorBoundary>
-    </ThemeProvider>
+    <RtlProvider>
+      <ThemeProvider theme={appTheme}>
+        <CssBaseline />
+        <AppErrorBoundary>
+          <MapViewEnhanced />
+        </AppErrorBoundary>
+      </ThemeProvider>
+    </RtlProvider>
   </StrictMode>,
 );

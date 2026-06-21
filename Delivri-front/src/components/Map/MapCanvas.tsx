@@ -27,8 +27,12 @@ const MapCanvas = ({
   apiLoading,
   showApiPerformance,
 }: MapCanvasProps) => (
-  <Box sx={{ flex: 1, position: 'relative', minHeight: 0 }}>
-    <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+  <Box sx={{ flex: 1, position: 'relative', minHeight: 0, direction: 'ltr' }}>
+    <div
+      ref={containerRef}
+      className="map-container"
+      style={{ width: '100%', height: '100%', direction: 'ltr' }}
+    />
 
     {!ready && !mapLoadError && (
       <Box
@@ -78,7 +82,7 @@ const MapCanvas = ({
     )}
 
     {showApiPerformance && ready && (
-      <Box sx={{ position: 'absolute', top: 16, left: 16, width: 280, zIndex: 1000, opacity: 0.92 }}>
+      <Box sx={{ position: 'absolute', top: 16, insetInlineEnd: 16, width: 280, zIndex: 1000, opacity: 0.92 }}>
         <ApiPerformance timings={timings} loading={apiLoading} />
       </Box>
     )}
@@ -88,7 +92,7 @@ const MapCanvas = ({
         sx={{
           position: 'absolute',
           bottom: 16,
-          left: 16,
+          insetInlineEnd: 16,
           zIndex: 1000,
           bgcolor: 'background.paper',
           borderRadius: 2,

@@ -1,32 +1,52 @@
 import * as maplibregl from 'maplibre-gl';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { DeliveryStop } from '../types/types';
+import { createStopMarkerElement, getStopMarkerVariant } from '../utils/stopMarkerFactory';
 
 export const useStopMarkers = (
   mapRef: React.RefObject<maplibregl.Map | null>,
+  mapReady: boolean,
   deliveryStops: DeliveryStop[],
   currentStopIndex: number,
+  isNavigating = false,
 ) => {
+  const markersRef = useRef<maplibregl.Marker[]>([]);
+
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !mapReady) return;
+
+    const clearMarkers = () => {
+      markersRef.current.forEach((m) => m.remove());
+      markersRef.current = [];
+    };
 
     const updateMarkers = () => {
-      document.querySelectorAll('.maplibregl-marker').forEach((el) => {
-        if (el.querySelector('.delivery-marker')) el.remove();
-      });
+      clearMarkers();
 
       deliveryStops.forEach((stop, i) => {
-        const el = document.createElement('div');
-        el.classList.add('delivery-marker');
-        if (stop.completed) el.classList.add('completed');
-        if (i === currentStopIndex) el.classList.add('current');
-        el.innerText = `${i + 1}`;
-        new maplibregl.Marker(el).setLngLat(stop.coordinates).addTo(map);
+        if (!stop.coordinates || stop.coordinates.some((c) => Number.isNaN(c))) return;
+
+        const variant = getStopMarkerVariant(stop, i, currentStopIndex, isNavigating);
+        const el = createStopMarkerElement(i, variant);
+
+        const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+          .setLngLat(stop.coordinates)
+          .addTo(map);
+
+        markersRef.current.push(marker);
       });
     };
 
-    if (map.isStyleLoaded()) updateMarkers();
-    else map.once('load', updateMarkers);
-  }, [mapRef, deliveryStops, currentStopIndex]);
+    if (map.isStyleLoaded()) {
+      updateMarkers();
+    } else {
+      map.once('load', updateMarkers);
+    }
+
+    return () => {
+      map.off('load', updateMarkers);
+      clearMarkers();
+    };
+  }, [mapRef, mapReady, deliveryStops, currentStopIndex, isNavigating]);
 };

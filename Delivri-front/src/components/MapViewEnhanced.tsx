@@ -63,8 +63,6 @@ const MapViewEnhanced = () => {
     loadRoute,
   } = useRouteLoader({ mapRef, ready, currentLocation, deliveryStops, trackApiCall });
 
-  useStopMarkers(mapRef, deliveryStops, currentStopIndex);
-
   const focusOnStop = useCallback(
     (coords: [number, number]) => mapRef.current?.flyTo({ center: coords, zoom: 16, essential: true }),
     [mapRef],
@@ -88,6 +86,8 @@ const MapViewEnhanced = () => {
   });
 
   useVoiceGuidance(isNavigating, navigationSteps, currentStopIndex);
+
+  useStopMarkers(mapRef, ready, deliveryStops, currentStopIndex, isNavigating);
 
   const handleAddStop = (address: string, coordinates: [number, number]) => {
     const ok = addStop(address, coordinates);
@@ -145,7 +145,7 @@ const MapViewEnhanced = () => {
 
   return (
     <ErrorBoundary>
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', direction: 'rtl' }}>
           <LocationPermissionPopup
             open={locationPopupOpen}
             onClose={() => setLocationPopupOpen(false)}
@@ -162,7 +162,14 @@ const MapViewEnhanced = () => {
             panelOpen={panelOpen}
           />
 
-          <Box sx={{ display: 'flex', flex: 1, minHeight: 0, pb: { xs: 7, sm: 7 } }}>
+          <Box sx={{ display: 'flex', flex: 1, minHeight: 0, pb: { xs: 7, sm: 7 }, direction: 'rtl' }}>
+            <NavigationPanelShell
+              isMobile={isMobile}
+              mobileOpen={panelOpen}
+              onClosePanel={() => setPanelOpen(false)}
+              panelProps={panelProps}
+            />
+
             <MapCanvas
               containerRef={containerRef}
               ready={ready}
@@ -173,13 +180,6 @@ const MapViewEnhanced = () => {
               timings={timings}
               apiLoading={apiLoading}
               showApiPerformance={!isMobile}
-            />
-
-            <NavigationPanelShell
-              isMobile={isMobile}
-              mobileOpen={panelOpen}
-              onClosePanel={() => setPanelOpen(false)}
-              panelProps={panelProps}
             />
           </Box>
 

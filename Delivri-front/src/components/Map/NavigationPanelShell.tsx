@@ -53,7 +53,6 @@ const NavigationPanelShell = ({
     return (
       <Drawer
         variant="temporary"
-        anchor="right"
         open={mobileOpen}
         onClose={onClosePanel}
         ModalProps={{ keepMounted: true }}

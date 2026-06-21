@@ -1,5 +1,7 @@
 # Delivri App Monorepo
 
+> 📖 **מדריך מפורט בעברית:** [`README-DETAILED.md`](README-DETAILED.md) — ארכיטקטורה, hooks, API, geocoding, RTL, troubleshooting ועוד.
+
 Delivri is a route-planning and delivery analytics project split into three apps:
 
 - `Delivri-front` - React + Vite web client (map, routing, dashboard)
