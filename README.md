@@ -1,6 +1,7 @@
 # Delivri App Monorepo
 
-> 📖 **מדריך מפורט בעברית:** [`README-DETAILED.md`](README-DETAILED.md) — ארכיטקטורה, hooks, API, geocoding, RTL, troubleshooting ועוד.
+> 📖 **מדריך מפורט בעברית:** [`README-DETAILED.md`](README-DETAILED.md) — ארכיטקטורה, hooks, API, geocoding, RTL, troubleshooting ועוד.  
+> 📋 **אפיון מלא כפרומpt:** [`SPEC-PROMPT.md`](SPEC-PROMPT.md) — כל פונקציונליות, APIs, schemas, קבועים, ו-checklist QA.
 
 Delivri is a route-planning and delivery analytics project split into three apps:
 
